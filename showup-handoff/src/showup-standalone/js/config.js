@@ -1,0 +1,7 @@
+var STORE_KEY = 'showup-proto-flow';
+var EVENTS_KEY = 'showup-events';
+var EV_PREFIX = 'showup-ev-';
+var DOTS_KEY = 'showup-dots-seen';
+var TODAY = '2026-10-17';
+var FRESH_LINK = 'https://showup.example/e/N8R2VQ';
+var ITEM_H = 40;
