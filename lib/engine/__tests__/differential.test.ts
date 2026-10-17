@@ -24,7 +24,7 @@ function oldView(ev: EventData) {
 }
 
 function newView(ev: EventData) {
-  const r = rankSlots(ev);
+  const r = rankSlots(ev, { favourites: false }); // the original ranking
   return {
     best: r.best ? r.best.slot.id : null,
     days: r.days.map((d) => {

@@ -7,17 +7,19 @@ import { demoEvent, ORG_RESP, GUEST_RESP } from '../../ui/data/fixtures';
 import { clone } from '../../ui/utils/helpers';
 import { fmtCompact } from '../../ui/utils/format';
 
+// A6 records the prototype's ranking, which ignores Favourites.
+const OLD = { favourites: false };
 const alexAlone = (): EventData => demoEvent([clone(ORG_RESP)]);
 const alexAndJess = (): EventData => demoEvent([clone(ORG_RESP), clone(GUEST_RESP)]);
 const dots = (ev: EventData, id: string) => {
-  const d = rankSlots(ev).days.find((x) => x.slot.id === id)!;
+  const d = rankSlots(ev, OLD).days.find((x) => x.slot.id === id)!;
   const w = slotWindow(ev.win, d.slot, d);
   return { time: w.window ? fmtCompact(w.window.s, w.window.e) : '', go: w.go, free: w.free };
 };
 
 describe('A6: Alex alone', () => {
   it('best is fri: both days go 1 / free 1, and on a full tie the earlier day wins', () => {
-    const r = rankSlots(alexAlone());
+    const r = rankSlots(alexAlone(), OLD);
     expect(r.days.map((d) => [d.slot.id, d.go, d.free])).toEqual([['fri', 1, 1], ['sat', 1, 1]]);
     expect(r.best?.slot.id).toBe('fri');
   });
@@ -30,11 +32,11 @@ describe('A6: Alex alone', () => {
 
 describe('A6: Alex + Jess', () => {
   it('best is sat', () => {
-    expect(rankSlots(alexAndJess()).best?.slot.id).toBe('sat');
+    expect(rankSlots(alexAndJess(), OLD).best?.slot.id).toBe('sat');
   });
   it('fri: go 1, free 2; Jess\'s "at least 3" fails, so she is eliminated', () => {
     const ev = alexAndJess();
-    const d = rankSlots(ev).days.find((x) => x.slot.id === 'fri')!;
+    const d = rankSlots(ev, OLD).days.find((x) => x.slot.id === 'fri')!;
     expect([d.go, d.free]).toEqual([1, 2]);
     const v = viableGroup('fri', ev.responses);
     expect(v.group).toEqual(['Alex']);
@@ -47,7 +49,7 @@ describe('A6: Alex + Jess', () => {
   });
   it('sat: go 2, free 2, dots 8 – 11pm, 2 of 2', () => {
     const ev = alexAndJess();
-    const d = rankSlots(ev).days.find((x) => x.slot.id === 'sat')!;
+    const d = rankSlots(ev, OLD).days.find((x) => x.slot.id === 'sat')!;
     expect([d.go, d.free]).toEqual([2, 2]);
     expect(viableGroup('sat', ev.responses)).toEqual({ group: ['Alex', 'Jess'], rounds: [] });
     expect(dots(ev, 'sat')).toEqual({ time: '8 – 11pm', go: 2, free: 2 });
