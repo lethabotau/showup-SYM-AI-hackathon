@@ -1,6 +1,6 @@
 # SHOWUP — DESIGN_SYSTEM.md
 
-> **Note (18 Oct 2026, Next.js migration):** the live stylesheets are in `styles/` (split copies of the original CSS, unchanged). `styles/main.css` / `styles/event.css` named below are reference copies, now in `archive/design-reference-styles/`. The values in this document still match.
+> **Note (18 Oct 2026, Next.js migration):** the live stylesheets are in `styles/`. `styles/main.css` / `styles/event.css` named below are reference copies, now in `archive/design-reference-styles/`. The supplied wheel picker replaced the documented stand-in in the live app; its scoped `twp-*` rules are in `styles/components/wheels.css`. Stand-in wheel details below remain historical design-reference material.
 
 Document 2 of 4 · Read-only extraction · Source version `1792166501-1cda`
 
@@ -332,7 +332,7 @@ All of these live in `project/Main.dc.html` unless marked **(E)** for `Event.dc.
 - **Availability control and willingness control** (65–75): one segmented control used for both. Availability options are Not free / Free / Favourite. Willingness options are Yes / If… / No, and its thumb stays silver. The thumb position is set inline as `transform: translateX(0|100|200%)`. An empty willingness value gives `.is-empty` (opacity 0). Favourite gives `.is-red` (the red layer fades in over the silver one).
 - **Day card** (161–175): `.day.glass`, `.is-slim` when Not free (a single row on mobile showing the short day label "Fri 23 Oct"), and `.reveal` (0fr → 1fr rows plus opacity over 260ms; `overflow` is released by the `reveal-unclip` keyframe after 260ms so shadows aren't clipped).
 - **Timeline** (176–184): `.tl` (a single `<button>` wrapping track and ticks), `.tl-track`, `.tl-fill.is-free` / `.tl-fill.glass-red`, `.tl-h` (first tick left-aligned, last right-aligned).
-- **Range label and wheels** (185–191, 77–90): `.range-label.glass-control` pill; `.range-wheels` appears inline below it. **Stand-in wheels; the supplied component is missing.**
+- **Range label and wheels** (185–191, 77–90): `.range-label.glass-control` pill; `.range-wheels` appears inline below it. The live app now mounts the supplied picker with scoped `twp-*` classes; this source description records the previous stand-in.
 - **Conditions summary** (194–196): `.cond-sum` with a `.label` prefix ("Only you see this: ") and `.cond-actions` text buttons.
 - **Calendar** (134–148): `.cal.glass`, `.cal-head` (text month navigation), `.cal-dow` (M T W T F S S), `.cal-grid`, `.cal-day`, `.cal-blank`.
 - **Your events rows** (118–125): `.my-row.glass-control`, a two-column grid of name and status on the left with the role label on the right.

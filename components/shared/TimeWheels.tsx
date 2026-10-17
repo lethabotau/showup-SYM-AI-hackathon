@@ -1,27 +1,63 @@
-// Shared markup, identical in Main.dc.html and Event.dc.html (or used twice in Main): the stand-in From/Until time wheels (Create, and each Respond range).
-import { Fragment } from 'react';
+'use client';
 
-export default function TimeWheels({ wheels }: { wheels: any[] }) {
+import { useLayoutEffect, useRef } from 'react';
+import {
+  createWheelTimePicker,
+  type WheelTimePicker,
+} from '@/lib/ui/time-wheel-picker';
+
+type WheelDescriptor = {
+  key: string;
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  onChange: (minutes: number) => void;
+};
+
+function TimeWheel({ wheel }: { wheel: WheelDescriptor }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<WheelTimePicker | null>(null);
+  const onChangeRef = useRef(wheel.onChange);
+  const valueRef = useRef(wheel.value);
+  onChangeRef.current = wheel.onChange;
+  valueRef.current = wheel.value;
+
+  useLayoutEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const picker = createWheelTimePicker(host, {
+      value: valueRef.current,
+      step: 15,
+      min: wheel.min,
+      max: wheel.max,
+      label: wheel.label,
+      onChange: (minutes) => onChangeRef.current(minutes),
+    });
+    pickerRef.current = picker;
+    return () => {
+      picker.destroy();
+      pickerRef.current = null;
+    };
+  }, [wheel.label, wheel.min, wheel.max]);
+
+  useLayoutEffect(() => {
+    pickerRef.current?.set(wheel.value);
+  }, [wheel.value]);
+
   return (
-    <div className="wheels">
-      {(wheels || []).map((w: any, $index: number) => (
-        <Fragment key={$index}>
-          <div className="wheel-col">
-            <p className="wheel-label" id={w.labelId}>{w.label}</p>
-            <div className="wheel glass-control">
-              <div className="wheel-band glass-silver" aria-hidden="true" />
-              <div className="wheel-scroll" tabIndex={0} role="spinbutton" aria-labelledby={w.labelId} aria-valuetext={w.valueText} onScroll={w.onScroll} onKeyDown={w.onKey} onClick={w.onClick} ref={w.setEl}>
-                <div className="wheel-pad" aria-hidden="true" />
-                {(w.items || []).map((it: any, $index: number) => (
-                  <Fragment key={$index}>
-                    <div className={it.cls} aria-hidden="true">{it.label}</div>
-                  </Fragment>
-                ))}
-                <div className="wheel-pad" aria-hidden="true" />
-              </div>
-            </div>
-          </div>
-        </Fragment>
+    <div className="time-picker-field">
+      <p className="time-picker-label">{wheel.label}</p>
+      <div className="time-picker-host" ref={hostRef} />
+    </div>
+  );
+}
+
+export default function TimeWheels({ wheels }: { wheels: WheelDescriptor[] }) {
+  return (
+    <div className="time-pickers">
+      {(wheels || []).map((wheel) => (
+        <TimeWheel key={wheel.key} wheel={wheel} />
       ))}
     </div>
   );

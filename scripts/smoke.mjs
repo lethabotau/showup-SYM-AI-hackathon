@@ -16,8 +16,8 @@ let server = null;
 let base = process.env.BASE_URL;
 if (!base) {
   const port = 3999;
-  base = `http://localhost:${port}`;
-  server = spawn('npx', ['next', 'start', '-p', String(port)], { stdio: 'ignore' });
+  base = `http://127.0.0.1:${port}`;
+  server = spawn('npx', ['next', 'start', '-H', '127.0.0.1', '-p', String(port)], { stdio: 'ignore' });
   let up = false;
   for (let i = 0; i < 60 && !up; i++) {
     await new Promise((r) => setTimeout(r, 500));

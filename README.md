@@ -2,19 +2,21 @@
 
 Group plans that actually happen. The organiser picks candidate days. Everyone marks when they're free, whether they'd actually go, and what it depends on ("if Sam's going and there's at least 5 of us"). showup then shows the time most people would really turn up for.
 
-This is the hackathon frontend, ported from the original HTML prototype to **Next.js 14 (App Router) + TypeScript**. The behaviour and appearance match the original. The backend (Supabase, Anthropic API, coordination engine) hasn't been built yet.
+This is the hackathon frontend, ported from the original HTML prototype to **Next.js 16 (App Router) + TypeScript**. The backend (Supabase and Anthropic API) has not been built yet. A tested coordination engine exists, but the UI still uses its characterised legacy recommendation policy until the ranking and backend contracts are agreed.
 
 ## Run it
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm run build        # production build (also runs ESLint + type checks)
+npm run lint         # TypeScript check
+npm run build        # production build
 npm run start        # serve the production build
 npm run smoke        # after a build: loads every route in Chromium, fails on any console error
+npm run test:wheel   # after a build: cross-midnight Create/Respond flow at 390px and 1440px
 ```
 
-Requires Node 18.17+. `npm run smoke` and `npm run visual` need Playwright's Chromium once: `npx playwright install chromium`.
+Requires Node 20.9+. Browser tests need Playwright's Chromium once: `npx playwright install chromium`.
 
 | Route | What it is |
 |---|---|
@@ -46,7 +48,7 @@ lib/
   ui/utils/                  helpers, formatting, dates, recommend (the current "engine"), conditions parser
   ui/services/storage.ts     localStorage persistence (the seam for the backend)
   ui/data/, ui/config.ts     constants, fixtures, TODAY, storage keys
-  engine/                    PLACEHOLDER: coordination engine
+  engine/                    tested coordination engine (not yet wired to the UI)
   supabase/                  PLACEHOLDER: Supabase client
 styles/                      the original CSS, unchanged
 public/fonts/                Manrope (offline fallback for Google Fonts)
@@ -69,12 +71,12 @@ MIGRATION_AUDIT.md           how the old code was audited and mapped to this str
 | Best-time calculation | `lib/ui/utils/recommend.ts` |
 | Fake 700 ms save, fixed invite links and QR codes, `TODAY = 2026-10-17` | `lib/ui/flow/respond.ts`, `lib/ui/config.ts`, `components/flow/screens/EventPage.tsx` |
 | Demo fixtures (Alex, Jess, the 8-person sample) | `lib/ui/data/fixtures.ts`, `lib/ui/sample/constants.ts` |
-| Wheel time picker is a stand-in (the supplied component never arrived) | `components/shared/TimeWheels.tsx`, `lib/ui/flow/wheels.ts` |
+| Recommendation UI still uses the characterised legacy ranking policy | `lib/ui/utils/recommend.ts` |
 
-**Empty placeholders:** `app/api/`, `lib/engine/`, `lib/supabase/`.
+**Empty placeholders:** `app/api/`, `lib/supabase/`.
 
 ## Working on the code
 
-- The ported logic (`lib/ui/**`) is the original JavaScript, unchanged apart from module `export`/`import` lines. It is marked `// @ts-nocheck`, and adding types is a later job.
+- Most ported logic (`lib/ui/**`) remains mechanically split from the original JavaScript and is marked `// @ts-nocheck`. The supplied wheel picker and its cross-midnight adapters are typed additions.
 - **Don't swap `lib/ui/dc-runtime.tsx` for plain React state.** Its `setState` updates `this.state` immediately, and the logic depends on that. The file explains why.
 - To check you haven't changed anything visible, run `npm run build && npm run start`, then `npm run visual -- all`. This captures the original (`archive/showup-standalone`) and the port at 1440px and 390px and pixel-diffs them into `.visual/`. Use `ONLY=<regex>` to run a subset.

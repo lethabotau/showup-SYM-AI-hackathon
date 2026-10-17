@@ -7,7 +7,6 @@ import { FAMILY, DEFAULT_START, STORE_KEY, DOTS_KEY } from '../config';
 import { baseState, seed, respondFor } from '../state';
 import { loadMyEvents } from '../services/storage';
 import { AppMixin } from './app';
-import { WheelsMixin } from './wheels';
 import { LandingMixin } from './landing';
 import { CreateMixin } from './create';
 import { JoinMixin } from './join';
@@ -50,7 +49,6 @@ export class Component extends DCLogic {
     this.sheetEl = null; this.propEl = null; this.savedEl = null; this.headingEl = null; this.linkEl = null; this.remEl = null;
     this.timer = null; this.timers = {};
     this.parseTimer = null;
-    this.wheelDefs = {}; this.wheelEls = {}; this.wheelTimers = {};
   }
 
   componentDidMount() { this._prev = this.state; this.maybeGrowDiscs(); }
@@ -59,7 +57,6 @@ export class Component extends DCLogic {
     if (this.timer) clearTimeout(this.timer);
     if (this.parseTimer) clearTimeout(this.parseTimer);
     var t = this.timers; Object.keys(t).forEach(function (k) { clearTimeout(t[k]); });
-    var wt = this.wheelTimers; Object.keys(wt).forEach(function (k) { clearTimeout(wt[k]); });
   }
 
   componentDidUpdate(prevProps) {
@@ -79,7 +76,6 @@ export class Component extends DCLogic {
       try { this.savedEl.focus({ preventScroll: true }); this.savedEl.scrollIntoView({ block: 'center', behavior: this.motion() }); } catch (e) {}
     }
     this.maybeGrowDiscs();
-    this.syncWheels();
   }
   }
-mix(Component, [AppMixin, WheelsMixin, LandingMixin, CreateMixin, JoinMixin, RespondMixin, ConditionsSheetMixin, EventPageMixin, ProposeSheetMixin]);
+mix(Component, [AppMixin, LandingMixin, CreateMixin, JoinMixin, RespondMixin, ConditionsSheetMixin, EventPageMixin, ProposeSheetMixin]);

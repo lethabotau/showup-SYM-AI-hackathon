@@ -9,4 +9,3 @@ export var EV_PREFIX = 'showup-ev-';
 export var DOTS_KEY = 'showup-dots-seen';
 export var TODAY = '2026-10-17';
 export var FRESH_LINK = 'https://showup.example/e/N8R2VQ';
-export var ITEM_H = 40;

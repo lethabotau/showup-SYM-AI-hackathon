@@ -6,29 +6,28 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "smoke": "node scripts/smoke.mjs",
+    "test:wheel": "node scripts/test-wheel-flow.mjs",
     "visual": "node scripts/visual-diff.mjs",
     "test": "vitest run",
     "test:engine": "tsc -p lib/engine && vitest run lib/engine",
     "bench:engine": "tsx scripts/bench-engine.ts"
   },
   "dependencies": {
-    "next": "14.2.35",
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@types/node": "20.19.43",
-    "@types/react": "18.3.31",
-    "@types/react-dom": "18.3.7",
-    "eslint": "8.57.1",
-    "eslint-config-next": "14.2.35",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "pixelmatch": "5.3.0",
     "playwright": "1.64.1",
     "pngjs": "7.0.0",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
-    "vitest": "3.2.7"
+    "vitest": "4.1.12"
   }
 }

@@ -75,7 +75,6 @@ export class AppMixin {
 
   renderVals() {
     var s = this.state;
-    this.wheelDefs = {};
     var x = this.eventContext(s);
     return Object.assign({}, this.shellVals(s, x), this.landingVals(s), this.createVals(s), this.joinVals(s), this.respondVals(s), this.eventVals(s, x), this.proposeVals(s, x), this.sheetVals(s));
   }

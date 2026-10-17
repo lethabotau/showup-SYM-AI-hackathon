@@ -4,7 +4,7 @@
 >
 > | Original reference | Now |
 > |---|---|
-> | `Main.dc.html` functions (`dayStats`, `bestWindow`, `coverCount`, `dayDots`, `summarise`) | `lib/ui/utils/recommend.ts` (future home: `lib/engine/`) |
+> | `Main.dc.html` recommendation functions | The UI's characterised policy remains in `lib/ui/utils/recommend.ts`; a tested replacement exists in `lib/engine/` but is not wired in pending ranking decisions |
 > | `parseConditions`, `STOPWORDS`, `NUMWORDS` | `lib/ui/utils/conditions-parser.ts`, `lib/ui/data/constants.ts` |
 > | `store`, `loadMyEvents`, `recordMyEvent`, `saveEventData`, `loadEventData` (the storage seam) | `lib/ui/services/storage.ts` (future: `lib/supabase/`) |
 > | `dotRowsFrom` | `lib/ui/utils/dot-rows.ts` |
@@ -46,7 +46,7 @@ What exists now, where the seam is, and what has to be decided before each area 
 | **Identity and permissions** | A typed name; organiser rights = `mode === 'organiser'` on this device; responses keyed by `role + who`; anyone can "Preview as a guest" | `mode`, `myName`, `joinContinue`, `saveToEvent` | No | R6, R8 |
 | **Shareable link / QR** | One fixed fake URL and static QR for all events | `FRESH_LINK`, the QR SVG, `copy` | Generating a per-event link is mechanical once ids are server-issued | R8 |
 | **AI interpretation of conditions** | Regex `parseConditions` returning `{status, chips}`; two condition types; unsupported phrasing blocked | `parseConditions(raw, group)` → `{status: 'empty'\|'ok'\|'unsupported'\|'none', chips: Condition[]}`; the 600ms debounce in `onSheetText` | The contract can be kept, but its behaviour is undefined | R4 |
-| **Recommendation calculations** | `dayStats` (per-day iterative elimination), `bestWindow`, `dayDots`, `summarise` (the ranking) | Pure functions (A6) | No. The model and the ranking are unspecified | R1, R2, R3 |
+| **Recommendation calculations** | The UI uses `dayStats`, `bestWindow`, `dayDots`, `summarise`; `lib/engine/` is implemented and tested separately | Pure functions and engine module | Integration is blocked. The engine adds a Favourite tie-break, so wiring it in would change policy | R1, R2, R3 |
 | **Private conditions** | Stored in plain text inside the shared event object; only hidden in the UI ("Only you see this") | `conds`, `condText` on `Response` | No. Today any client holding the event can read them | R5 |
 | **Proposal and confirmation** | `proposal {slotId, deadline, min}` saved locally; nothing is sent; no commitment step; status is derived | `saveProposal`, `withdraw`, propose sheet | No | R6 |
 | **Notifications / reminder** | Reminder text to copy by hand | `REMINDER` template | Out of scope until R6 | R6 |
@@ -96,7 +96,7 @@ These are open questions only; none of them has been answered here. They fall in
 - **Undefined:**
   - Should there be per-day windows?
   - Should willingness and conditions attach to a range rather than a day?
-  - Can a window cross midnight (today the 1440 end is "12am" and nothing goes past it)?
+  - Windows can now cross midnight on a linear minute axis (for example 5pm–1am is `1020–1500`); the product and backend contracts still need to confirm this convention.
   - What are the maximum days and ranges?
   - Do ranges kept while a day is set back to Not free persist (today they are stored but ignored)?
 
@@ -154,7 +154,7 @@ These are open questions only; none of them has been answered here. They fall in
 | Item | Kind |
 |---|---|
 | `componentDidUpdate` defect (D1): scroll and focus, sheet Escape, flow red dots, participant focus | Fixed in `src/showup-standalone/` (A2). Participant "Saved" focus and propose-sheet focus not yet re-checked; the fix is also in the canvas copy |
-| Supplied wheel picker not integrated (D3) | Implementation gap (A3; awaiting file) |
+| Supplied wheel picker (D3) | Integrated in Create and Respond with scoped CSS and cross-midnight adapters |
 | Wordmark dot detached (D2) | Implementation gap, cosmetic; needs a decision whether to correct it |
 | `event.note` captured, never shown | Documentation gap: where it appears and who sees it |
 | `TODAY` hard-coded; no time zone | Implementation gap (the real date) + documentation gap (time-zone rule) |

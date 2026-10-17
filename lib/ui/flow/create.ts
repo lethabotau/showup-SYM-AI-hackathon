@@ -3,11 +3,12 @@
 // (the original files shared globals through classic <script> tags). Types come later.
 import { TODAY } from '../config';
 import { DAYS, MON, MONTHS } from '../data/constants';
-import { steps, newId } from '../utils/helpers';
+import { newId } from '../utils/helpers';
 import { pad2 } from '../utils/format';
 import { isoFromDate, slotFromIso } from '../utils/dates';
 import { recordMyEvent, saveEventData } from '../services/storage';
 import { respondFor } from '../state';
+import { untilFromWheel, wheelMinute } from '../utils/wheel-time';
 /* Create screen: calendar, time window, name */
 export class CreateMixin {
   toggleDay(iso) {
@@ -23,7 +24,7 @@ export class CreateMixin {
     if (m < TODAY.slice(0, 7)) return;
     this.setState({ calMonth: m });
   }
-  setFrom(m) { var u = this.state.until; if (u < m + 60) u = Math.min(1440, m + 60); this.setState({ from: m, until: u }); }
+  setFrom(m) { var u = this.state.until; if (u < m + 60) u = m + 60; this.setState({ from: m, until: u }); }
   setUntil(m) { var f = this.state.from; if (m < f + 60) f = Math.max(0, m - 60); this.setState({ until: m, from: f }); }
   createEvent() {
     var s = this.state;
@@ -65,8 +66,8 @@ export class CreateMixin {
       calPrevLabel = MON[prevD.getMonth()]; calNextLabel = MON[nextD.getMonth()];
       calPrevAria = 'Previous month, ' + MONTHS[prevD.getMonth()]; calNextAria = 'Next month, ' + MONTHS[nextD.getMonth()];
       createWheels = [
-        this.makeWheel('c-from', 'From', steps(0, 1380, 15), s.from, function (v) { self.setFrom(v); }),
-        this.makeWheel('c-until', 'Until', steps(60, 1440, 15), s.until, function (v) { self.setUntil(v); })
+        { key: 'c-from', label: 'From', value: wheelMinute(s.from), onChange: function (v) { self.setFrom(v); } },
+        { key: 'c-until', label: 'Until', value: wheelMinute(s.until), onChange: function (v) { self.setUntil(untilFromWheel(v, self.state.from)); } }
       ];
     }
     var winLen = s.until - s.from; var winH = Math.floor(winLen / 60); var winM = winLen % 60;

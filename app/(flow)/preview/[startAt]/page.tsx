@@ -17,11 +17,15 @@ export function generateStaticParams() {
   return Object.keys(STARTS).map((startAt) => ({ startAt }));
 }
 
-export function generateMetadata({ params }: { params: { startAt: string } }) {
-  return { title: STARTS[params.startAt] };
+type PreviewProps = { params: Promise<{ startAt: string }> };
+
+export async function generateMetadata({ params }: PreviewProps) {
+  const { startAt } = await params;
+  return { title: STARTS[startAt] };
 }
 
-export default function Preview({ params }: { params: { startAt: string } }) {
-  if (!STARTS[params.startAt]) notFound();
-  return <FlowClient startAt={params.startAt} />;
+export default async function Preview({ params }: PreviewProps) {
+  const { startAt } = await params;
+  if (!STARTS[startAt]) notFound();
+  return <FlowClient startAt={startAt} />;
 }

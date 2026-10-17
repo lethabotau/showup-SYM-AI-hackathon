@@ -2,6 +2,7 @@
 
 > **Note (18 Oct 2026, Next.js migration):** behaviour, copy, data model and fixtures below still match the code. Two things are out of date:
 > - Defect D1 is fixed in the code the app now runs. Screen changes scroll to the top and focus the heading, sheets take focus (so Escape works), and the flow's event page fills its red dots. Text describing the D1 effects as current is historical.
+> - Defect D3 is also fixed in the live app: Create and Respond use the supplied three-column wheel picker. Its CSS is scoped under `twp-*`, and adapters preserve SHOWUP's linear cross-midnight values.
 > - The screenshots in `docs/design-references/screenshots/` predate that fix.
 >
 > Path mapping: `Main.dc.html` → `components/flow/**` (markup) + `lib/ui/flow/**` (logic). `Event.dc.html` → `components/sample/**` + `lib/ui/sample/**`. The originals are in `archive/showup-standalone/`.
@@ -30,7 +31,7 @@ These were observed in the canvas runtime and reproduced in the standalone copy.
 |---|---|---|
 | D1 | `componentDidUpdate` receives no `prevState` and throws on every update (M and E). Manifest §15. **Fixed in the standalone copy.** The effects below are what the approved build did. | No scroll-to-top or heading focus on screen change. Focus never moves into the conditions or propose sheets, so **Escape does nothing until the user clicks inside the sheet**. **Flow event page: red "would go" dots never fill** when reached through the flow (they do on frames that start on that screen). Participant "Saved" block isn't scrolled to or focused. Stand-in wheels aren't re-synced after timeline taps while open. |
 | D2 | The wordmark is an `inline-flex` button (M) or link (E) with children `showup` + `<span class="dot">.</span>`, so the "." becomes its own flex item | The red dot renders slightly detached and lower than in plain text (visible in every screenshot) |
-| D3 | The wheel time picker is the stand-in, not the supplied component (still missing) | Create "What time?" and Respond range editing |
+| D3 | The approved build used a stand-in picker. **Fixed in the live app.** | Create "What time?" and Respond range editing |
 
 ---
 
@@ -89,7 +90,7 @@ These were observed in the canvas runtime and reproduced in the standalone copy.
    - today (17 Oct, hard-coded) is bold;
    - selected days use the silver material and are bold;
    - each day's `aria-label` reads "Friday 23 October" ("…, today" for today).
-4. H2 **"What time?"**. Two stand-in wheels, **"From"** (12:00 am → 11:00 pm) and **"Until"** (1:00 am → 12:00 am), in 15-minute steps. They default to **5:00 pm and 12:00 am**. Below them, live text: **"7 hr window"** (format: "N hr", "N min" or "N hr M min", followed by "window").
+4. H2 **"What time?"**. Two supplied three-column wheels, **"From"** and **"Until"**, in 15-minute steps. They default to **5:00 pm and 12:00 am**. Below them, live text: **"7 hr window"** (format: "N hr", "N min" or "N hr M min", followed by "window"). Until values at or before From are stored on the following day (for example 5pm–1am is `1020–1500`).
 5. Label **"Your name"** over a text input (maxlength 30).
 6. Text toggle **"More options"** (`aria-expanded`). When open it shows **"Note"** and a textarea.
 7. Primary button **"Create event"**. It is disabled until there are at least 2 days *and* a name; the hint underneath reads **"Pick at least two days."**, otherwise **"Add your name."**
@@ -100,7 +101,7 @@ These were observed in the canvas runtime and reproduced in the standalone copy.
 |---|---|---|
 | Tap a day | toggles selection. There is no maximum, and selections in other months are kept | REAL |
 | Month links | move by one month; you can't go before Oct 2026 | REAL |
-| Wheels | scroll, click or use the arrow and Page keys. Until is kept ≥ From + 60 minutes (the other wheel moves) | REAL (stand-in) |
+| Wheels | scroll, click or use Arrow Up/Down. Until is kept ≥ From + 60 minutes (the other wheel moves) | REAL |
 | More options → Note | stored in `event.note`; **never displayed anywhere** | INCOMPLETE |
 | Create event | builds the event (`id` = 6 random base36 characters; days sorted). Saves `showup-ev-<id>`, adds a "Your events" entry (Organising) and goes to Respond as organiser | REAL locally |
 
@@ -144,7 +145,7 @@ These were observed in the canvas runtime and reproduced in the standalone copy.
 
 The reveal area contains:
 - **Timeline** (`button.tl`, `aria-label` "Friday timeline. Tap an hour to move the nearest end of your time. Currently 7pm – 11pm."): a 32px track across the organiser's window, with fills (clear glass for Free, red glass for Favourite) and hour ticks underneath ("5p 6p … 12a"; every other hour if the window is longer than 10 hours).
-- **Range pills**, one per range, e.g. **"7pm – 11pm"**. Tapping a pill opens two stand-in wheels (From / Until, limited to the window, 15-minute steps) plus **"Done"**. With two ranges, each pill gets a **"Remove"**.
+- **Range pills**, one per range, e.g. **"7pm – 11pm"**. Tapping a pill opens two supplied wheels (From / Until, limited to the organiser's window, 15-minute steps) plus **"Done"**. Cross-midnight windows stay on SHOWUP's linear minute axis. With two ranges, each pill gets a **"Remove"**.
 - **"Add another time"**: shown only when a second range can be created.
 - **"Would you actually go?"** with the willingness control **Yes / If… / No**.
 - Error **"Let us know whether you'd actually go."**
@@ -445,7 +446,7 @@ interface MyEventEntry {             // localStorage['showup-events'] (≤20 kep
 | 06 | Respond organiser, all days slim | 27 | Propose sheet (flow) |
 | 07 | Day Free, expanded | 28 | Propose error (minimum) |
 | 08 | Day Favourite, 7pm – 11pm | 29 | Proposal saved notice |
-| 09 | Range wheels open (stand-in) | 30 | Seed: Create |
+| 09 | Range wheels open (historical stand-in) | 30 | Seed: Create |
 | 10 | Two ranges on one bar | 31 | Seed: Respond |
 | 11 | Submit error, missing willingness | 32 | Seed: Event fresh |
 | 12 | Conditions sheet, empty | 33 | Seed: Join |
@@ -463,4 +464,4 @@ interface MyEventEntry {             // localStorage['showup-events'] (≤20 kep
 - The flow event page with red dots filled (was blocked by D1, now fixed in the standalone copy; seed frame 34 shows the intended look).
 - The `showRoster` tweak on the sample page.
 - Reduced-motion variants.
-- The real wheel picker (missing).
+- The supplied wheel picker (the reference screenshots predate its integration).

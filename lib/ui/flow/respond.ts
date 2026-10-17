@@ -2,9 +2,10 @@
 // Ported verbatim from archive/showup-standalone/js/components/respond.js. Only the export/import lines were added
 // (the original files shared globals through classic <script> tags). Types come later.
 import { STATE_LABELS } from '../data/constants';
-import { clone, steps, mergeRanges, emptyMaps } from '../utils/helpers';
+import { clone, mergeRanges, emptyMaps } from '../utils/helpers';
 import { joinList, describe, fmtTick, rangeText } from '../utils/format';
 import { recordMyEvent, saveEventData } from '../services/storage';
+import { minuteInWindow, untilFromWheel, wheelMinute } from '../utils/wheel-time';
 /* Respond screen: days, availability, willingness, submit */
 export class RespondMixin {
   slotById(id) { var l = this.state.slots; for (var i = 0; i < l.length; i++) { if (l[i].id === id) return l[i]; } return null; }
@@ -76,8 +77,8 @@ export class RespondMixin {
   setRangeEdge(id, idx, edge, val) {
     var w = this.state.win; var rs = clone(this.state.ranges[id] || []); var r = rs[idx];
     if (!r) return;
-    if (edge === 's') { r.s = val; if (r.e < r.s + 60) r.e = Math.min(w.e, r.s + 60); }
-    else { r.e = val; if (r.e < r.s + 60) r.s = Math.max(w.s, r.e - 60); }
+    if (edge === 's') { r.s = Math.max(w.s, Math.min(val, w.e - 60)); if (r.e < r.s + 60) r.e = r.s + 60; }
+    else { r.e = Math.min(w.e, Math.max(val, w.s + 60)); if (r.e < r.s + 60) r.s = r.e - 60; }
     this.setRanges(id, rs);
   }
   toggleWheels(id, idx) { var cur = this.state.openWheel[id]; this.setState({ openWheel: this.withKey('openWheel', id, cur === idx ? null : idx) }); }
@@ -158,7 +159,6 @@ export class RespondMixin {
     var ticks = hours.filter(function (v, i) { return i % tickStep === 0 || i === hours.length - 1; }).map(function (v) {
       return { label: fmtTick(v), left: String(((v - w.s) / span) * 100), cls: 'tl-h' + (v === w.s ? ' is-first' : '') + (v === w.e ? ' is-last' : '') };
     });
-    var winValues = steps(w.s, w.e, 15);
     var slots = s.screen === 'respond' ? s.slots.map(function (sl) {
       var a = s.avail[sl.id] || 0; var wv = s.will[sl.id]; var c = s.conds[sl.id];
       var open = a > 0; var fav = a === 2; var rs = s.ranges[sl.id] || []; var ow = s.openWheel[sl.id];
@@ -170,8 +170,19 @@ export class RespondMixin {
         var wheelsOpen = open && ow === ri; var wheels = [];
         if (wheelsOpen) {
           wheels = [
-            self.makeWheel('r-' + sl.id + '-' + ri + '-s', 'From', winValues.filter(function (v) { return v <= w.e - 60; }), r.s, function (v) { self.setRangeEdge(sl.id, ri, 's', v); }),
-            self.makeWheel('r-' + sl.id + '-' + ri + '-e', 'Until', winValues.filter(function (v) { return v >= w.s + 60; }), r.e, function (v) { self.setRangeEdge(sl.id, ri, 'e', v); })
+            {
+              key: 'r-' + sl.id + '-' + ri + '-s', label: 'From', value: wheelMinute(r.s),
+              min: wheelMinute(w.s), max: wheelMinute(w.e),
+              onChange: function (v) { self.setRangeEdge(sl.id, ri, 's', minuteInWindow(v, self.state.win)); }
+            },
+            {
+              key: 'r-' + sl.id + '-' + ri + '-e', label: 'Until', value: wheelMinute(r.e),
+              min: wheelMinute(w.s), max: wheelMinute(w.e),
+              onChange: function (v) {
+                var current = (self.state.ranges[sl.id] || [])[ri];
+                if (current) self.setRangeEdge(sl.id, ri, 'e', untilFromWheel(v, current.s));
+              }
+            }
           ];
         }
         return {

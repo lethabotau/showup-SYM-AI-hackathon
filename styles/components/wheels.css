@@ -1,15 +1,17 @@
-/* Wheels (stand-in until the supplied component is attached) */
-.wheels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3);width:100%;max-width:360px}
-.wheel-col{display:flex;flex-direction:column;gap:6px;min-width:0}
-.wheel-label{font-size:13px;font-weight:500;color:var(--text-muted)}
-.wheel{position:relative;height:200px;border-radius:16px;overflow:hidden}
-.wheel-band{position:absolute;left:6px;right:6px;top:80px;height:40px;border-radius:12px}
-.wheel-scroll{position:relative;z-index:1;height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 32%,#000 68%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 32%,#000 68%,transparent 100%)}
-.wheel-scroll::-webkit-scrollbar{display:none}
-.wheel-scroll:focus{outline:none}
-.wheel:focus-within{outline:2px solid #333333;outline-offset:2px}
-.wheel-pad{height:80px}
-.w-item{height:40px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;font-size:17px;color:var(--text-muted);font-variant-numeric:tabular-nums;cursor:pointer;user-select:none;transition:color 150ms var(--ease-out)}
-.w-item.is-sel{color:#333333;font-weight:500}
+/* Supplied time wheel picker, class-prefixed to avoid application CSS collisions. */
+.time-pickers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3);width:100%;max-width:360px}
+.time-picker-field{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.time-picker-label{font-size:13px;font-weight:500;color:var(--text-muted)}
+.time-picker-host{width:100%}
+.twp-wheel{--text:#333333;--item-h:40px;--visible-rows:5;position:relative;display:flex;gap:2px;padding:0 8px;height:calc(var(--item-h) * var(--visible-rows));-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 32%,#000 68%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 32%,#000 68%,transparent 100%)}
+.twp-band{position:absolute;left:0;right:0;top:50%;height:var(--item-h);transform:translateY(-50%);border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.55));backdrop-filter:blur(12px) saturate(170%);-webkit-backdrop-filter:blur(12px) saturate(170%);border:1px solid rgba(255,255,255,0.9);box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 1px rgba(60,0,0,0.04),0 2px 8px rgba(80,20,20,0.06);pointer-events:none}
+.twp-col{position:relative;z-index:1;width:48px;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;outline:none;border-radius:12px}
+.twp-col::-webkit-scrollbar{display:none}
+.twp-col:focus-visible{box-shadow:inset 0 0 0 2px var(--text)}
+.twp-col.twp-period{width:48px}
+.twp-pad{height:calc(var(--item-h) * (var(--visible-rows) - 1) / 2)}
+.twp-item{height:var(--item-h);display:grid;place-items:center;font-size:20px;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:var(--text);scroll-snap-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;will-change:transform,opacity}
+.twp-col.twp-period .twp-item{font-size:17px}
 .wheel-done{align-self:flex-start}
+@media (prefers-reduced-motion:reduce){.twp-col{scroll-behavior:auto}}
 

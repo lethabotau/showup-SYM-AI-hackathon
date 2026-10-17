@@ -18,9 +18,5 @@ export function fmtShort(m) {
 export function fmtNum(m) { var h = Math.floor(m / 60) % 24; var mm = m % 60; return (h % 12 || 12) + (mm ? ':' + pad2(mm) : ''); }
 export function suffix(m) { return (Math.floor(m / 60) % 24) < 12 ? 'am' : 'pm'; }
 export function fmtCompact(s, e) { return suffix(s) === suffix(e) ? fmtNum(s) + ' – ' + fmtNum(e) + suffix(e) : fmtShort(s) + ' – ' + fmtShort(e); }
-export function fmtWheel(m) {
-  var h = Math.floor(m / 60) % 24; var mm = m % 60;
-  return (h % 12 || 12) + ':' + pad2(mm) + ' ' + (h < 12 ? 'am' : 'pm');
-}
 export function fmtTick(m) { var h = Math.floor(m / 60) % 24; return (h % 12 || 12) + (h < 12 ? 'a' : 'p'); }
 export function rangeText(r) { return fmtShort(r.s) + ' – ' + fmtShort(r.e); }
