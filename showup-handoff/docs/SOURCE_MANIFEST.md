@@ -13,7 +13,7 @@ All facts below were taken from the published source files, which were downloade
 1. **The app is not a conventional web project, but it now has a standalone copy that runs anywhere.** The source is a set of **Design Component files (`*.dc.html`)**. Inside the canvas they run on the host's `support.js`, which turns out to be **React 18.3.1 + ReactDOM 18.3.1 plus a template layer**. That host file is not part of the project. `showup-standalone.zip` replaces it with `standalone-support.js` (§14), which I wrote for this handoff, plus vendored React 18.3.1. The standalone copy was tested against the real canvas runtime: same behaviour on every check, and pixel-identical screenshots apart from timing artefacts (§14.4).
 2. **The supplied wheel-style time picker is STILL MISSING. Fix 1 could not be done.** The 03:30 message says `time-wheel-picker.html` is attached, but no such file arrived. The upload folder holds only the five text briefs (checked at 03:30 and again before this update). The wheels in both the canvas and the standalone copy are still the **stand-in inside `Main.dc.html`** (§7). §7 lists the exact integration points, ready for the swap once the file arrives.
 3. **Only two files are hand-authored.** `Main.dc.html` (the whole flow) and `Event.dc.html` (the fixed sample event). The other 14 `.dc.html` files are **mechanical copies** that differ only in a start screen, a title, a preview size and link targets (§3.3).
-4. **The approved canvas build has a lifecycle defect** (found while reading the canvas runtime, and confirmed in it). The host calls `componentDidUpdate(prevProps)` **without `prevState`**. Both authored files read `prevState`, so their `componentDidUpdate` throws on every update. The canvas catches the error and logs it, and the page keeps working, but several behaviours silently never happen (§15). This was **not fixed**, because the fixes weren't authorised. The standalone copy reproduces it on purpose so that it matches the canvas.
+4. **The approved canvas build has a lifecycle defect** (found while reading the canvas runtime, and confirmed in it). The host calls `componentDidUpdate(prevProps)` **without `prevState`**. Both authored files read `prevState`, so their `componentDidUpdate` throws on every update. The canvas catches the error and logs it, and the page keeps working, but several behaviours silently never happen (§15). This was **not fixed**, because the fixes weren't authorised. The standalone copy reproduced it on purpose so that it matched the canvas. **Update:** it is now fixed in `src/showup-standalone/` (§15). The canvas copy in `src/showup-source/` and the zips in `archives/` still contain the defect.
 
 ---
 
@@ -285,7 +285,7 @@ Fonts: when online, the files' own Google Fonts link loads Manrope. Offline, `st
 - [x] Recorded storage keys, external URLs and browser APIs
 - [x] Built `showup-standalone.zip` (`Main.dc.html` + `Event.dc.html` with only line 6 changed, `standalone-support.js`, React 18.3.1, Manrope) and verified it against the real canvas runtime (§14.4)
 - [ ] **Supply `time-wheel-picker.html`.** Still not received (Fix 1 blocked); the stand-in must not be treated as approved
-- [ ] Decide whether to authorise the `componentDidUpdate` fix (§15). It changes behaviour in both the canvas and the standalone copy
+- [x] Authorised and applied the `componentDidUpdate` fix to `src/showup-standalone/` (§15). The canvas copy in `src/showup-source/` was left unchanged
 - [ ] Decide the runtime route for the receiving platform (run the standalone copy as-is, or port to React). See Document 4
 - [x] Reference screenshots can now be captured locally (Document 3)
 
@@ -347,6 +347,8 @@ The reference was **the canvas's own runtime** (`dc-runtime.js` from the artifac
 
 ## 15. Defect in the approved build: `componentDidUpdate` never receives `prevState`
 
+**Status: fixed in `src/showup-standalone/` (`Main.dc.html` and `Event.dc.html`). Still present in `src/showup-source/` (the canvas copy) and in the zips in `archives/`.** The text below describes the defect as it was in the approved build.
+
 Both `Main.dc.html` (`componentDidUpdate(prevProps, prevState)`, reading `prevState.screen`, `.sheet`, `.proposeOpen`, `.phase`) and `Event.dc.html` (reading `prevState.proposeOpen`) assume React's two-argument signature. The canvas host passes only `prevProps`, so the method throws `TypeError: Cannot read properties of undefined` after its first statement on every update. The canvas logs the error and carries on.
 
 **Observed effects (identical in the canvas runtime and the standalone copy):**
@@ -357,4 +359,4 @@ Both `Main.dc.html` (`componentDidUpdate(prevProps, prevState)`, reading `prevSt
 - Stand-in wheels are not re-synced after timeline taps while they are open (`syncWheels` never runs).
 - The `startAt` Tweak change still works, because its check runs before the throw.
 
-**Fix (not applied; needs your authorisation):** have the logic track its own previous state instead of relying on the second argument. For example, snapshot `this.state` at the end of each `componentDidUpdate` and compare against that snapshot. This changes the canvas version too, so it falls outside "change nothing else".
+**Fix (applied to the standalone copy only):** the logic now tracks its own previous state instead of relying on the second argument. Each page sets `this._prev = this.state` in `componentDidMount`. At the top of `componentDidUpdate` it reads `var prevState = this._prev || this.state;` and then stores `this._prev = this.state`. Nothing else in either method changed, and `standalone-support.js` still passes only `prevProps`, as the canvas does. Checked in headless Chrome: Landing to Create scrolls to the top, Create to Respond focuses the heading, opening "If…" moves focus into the sheet, Escape closes it without a click, the red dots fill on the flow's event page (4 of 4, previously 0 of 4), and there are no console errors. Not checked: the participant "Saved" block focus and the propose sheet focus. Mirroring the fix into the canvas copy would change the approved source files and their checksums, so it has not been done.

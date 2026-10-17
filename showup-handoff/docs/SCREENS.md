@@ -16,11 +16,11 @@ Every screen and behaviour below was taken from `project/Main.dc.html` and `proj
 
 ## 0. Defects visible in the approved build
 
-These are observed in the canvas runtime, unfixed and reproduced in the standalone copy.
+These were observed in the canvas runtime and reproduced in the standalone copy. **D1 is now fixed in `src/showup-standalone/`** and remains in the canvas copy (`src/showup-source/`); D2 and D3 are unchanged. The screenshots in `design-reference/screenshots/` were captured before the D1 fix.
 
 | # | Defect | Effect on screens |
 |---|---|---|
-| D1 | `componentDidUpdate` receives no `prevState` and throws on every update (M and E). Manifest §15 | No scroll-to-top or heading focus on screen change. Focus never moves into the conditions or propose sheets, so **Escape does nothing until the user clicks inside the sheet**. **Flow event page: red "would go" dots never fill** when reached through the flow (they do on frames that start on that screen). Participant "Saved" block isn't scrolled to or focused. Stand-in wheels aren't re-synced after timeline taps while open. |
+| D1 | `componentDidUpdate` receives no `prevState` and throws on every update (M and E). Manifest §15. **Fixed in the standalone copy.** The effects below are what the approved build did. | No scroll-to-top or heading focus on screen change. Focus never moves into the conditions or propose sheets, so **Escape does nothing until the user clicks inside the sheet**. **Flow event page: red "would go" dots never fill** when reached through the flow (they do on frames that start on that screen). Participant "Saved" block isn't scrolled to or focused. Stand-in wheels aren't re-synced after timeline taps while open. |
 | D2 | The wordmark is an `inline-flex` button (M) or link (E) with children `showup` + `<span class="dot">.</span>`, so the "." becomes its own flex item | The red dot renders slightly detached and lower than in plain text (visible in every screenshot) |
 | D3 | The wheel time picker is the stand-in, not the supplied component (still missing) | Create "What time?" and Respond range editing |
 
@@ -201,7 +201,7 @@ The reveal area contains:
 | Action | Result | Status |
 |---|---|---|
 | Looks right | Keeps only valid chips; **unknown "Sam?" chips are dropped silently**; duplicates are removed. Saves the conditions and raw text to the day, closes the sheet and returns focus to that day | REAL (but see the drop) |
-| Cancel, scrim or Escape | If this wasn't an edit of saved conditions, willingness goes back to unselected; when editing, the saved conditions are kept | REAL; Escape only works once focus is inside the sheet (D1) |
+| Cancel, scrim or Escape | If this wasn't an edit of saved conditions, willingness goes back to unselected; when editing, the saved conditions are kept | REAL; in the approved build Escape only worked once focus was inside the sheet (D1, fixed in the standalone copy) |
 
 ---
 
@@ -247,7 +247,7 @@ Desktop layout: the left column (1–7) holds Best so far, the dot rows and Resp
   - **Count:** the would-go number (28px; red on the best day), then "of N free".
   - **Empty or zero:** a row with 0 would-go is dimmed to 60%; a day nobody is free shows **"Nobody free"**.
   - **Accessibility:** `aria-label` e.g. "Friday 23 Oct, 5pm to 12am: 1 of 1 free would go".
-  - **Bug:** the red fill never shows when this page is reached through the flow (D1).
+  - **Bug in the approved build:** the red fill never showed when this page was reached through the flow (D1; fixed in the standalone copy).
 - **Responses:** overlapping 44px silver circles with initials. Hover, focus or tap shows a name tooltip; tap toggles it.
 - **Actions:** primary **"Propose a time"** (or **"Change proposal"**) and secondary **"Draft reminder"**.
   - **Reminder panel** (glass): "Reminder message" textarea (read-only) containing *"Hey, we're trying to lock in a time for {event name}. Add your availability when you get a chance!"*, the note "Nothing is sent automatically. Paste it wherever your group chats.", **"Copy reminder"**, "Done", and a status message.
@@ -452,7 +452,7 @@ interface MyEventEntry {             // localStorage['showup-events'] (≤20 kep
 | 21 | Respond, guest | 42 | Sample: proposal saved |
 
 **Not captured (recapture once fixed or supplied):**
-- The flow event page with red dots filled (blocked by D1; seed frame 34 shows the intended look).
+- The flow event page with red dots filled (was blocked by D1, now fixed in the standalone copy; seed frame 34 shows the intended look).
 - The `showRoster` tweak on the sample page.
 - Reduced-motion variants.
 - The real wheel picker (missing).

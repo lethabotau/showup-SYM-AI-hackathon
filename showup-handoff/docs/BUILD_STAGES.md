@@ -36,7 +36,7 @@ Both routes then share **§3, Integration readiness**, and are bounded by **§4,
 
 **Two stages in both routes are blocked on you, not on the implementer:**
 - **Wheel picker swap** (A3 / part of B4): needs the real `time-wheel-picker.html`, which has never been received.
-- **`componentDidUpdate` fix** (A2): needs explicit authorisation, because it changes the approved build's behaviour (`SOURCE_MANIFEST.md` §15). Route B avoids the defect by design; see B1.
+- **`componentDidUpdate` fix** (A2): **done** in `src/showup-standalone/` (authorised; see `SOURCE_MANIFEST.md` §15). The canvas copy is unchanged. Route B avoids the defect by design; see B1.
 
 ---
 
@@ -57,10 +57,12 @@ Both routes then share **§3, Integration readiness**, and are bounded by **§4,
 - **Acceptance tests:**
   - Every state reproduces.
   - Pixel differences are limited to animation timing (the reference captures differ from themselves by about the same amount).
-  - The console shows only the known `componentDidUpdate` TypeError (D1).
+  - The console shows only the known `componentDidUpdate` TypeError (D1). Once A2 is applied, as it now is in `src/showup-standalone/`, the console shows no errors.
 - **Completion boundary:** a passing comparison report and the capture script. No code changes.
 
 ### A2 · Fix `componentDidUpdate` (only with written authorisation)
+
+**Status: done in `src/showup-standalone/`.** The steps below are kept as the record of what was asked.
 
 - **Objective:** make screen-change scrolling and focus, sheet focus and Escape, the flow's red-dot fill and the participant Saved focus work as the code intends.
 - **Required inputs:**
@@ -490,7 +492,7 @@ These are open questions only; none of them has been answered here. They fall in
 
 | Item | Kind |
 |---|---|
-| `componentDidUpdate` defect (D1): scroll and focus, sheet Escape, flow red dots, participant focus | Implementation gap (A2; awaiting authorisation) |
+| `componentDidUpdate` defect (D1): scroll and focus, sheet Escape, flow red dots, participant focus | Fixed in `src/showup-standalone/` (A2). Participant "Saved" focus and propose-sheet focus not yet re-checked; the canvas copy still has the defect |
 | Supplied wheel picker not integrated (D3) | Implementation gap (A3; awaiting file) |
 | Wordmark dot detached (D2) | Implementation gap, cosmetic; needs a decision whether to correct it |
 | `event.note` captured, never shown | Documentation gap: where it appears and who sees it |
