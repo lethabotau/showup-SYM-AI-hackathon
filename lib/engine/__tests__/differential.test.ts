@@ -10,7 +10,7 @@ import { clone } from '../../ui/utils/helpers';
 import { fmtCompact } from '../../ui/utils/format';
 
 function oldView(ev: EventData) {
-  const s = old.summarise(ev);
+  const s: any = old.summarise(ev); // untyped original (@ts-nocheck)
   return {
     best: s.best ? s.best.slot.id : null,
     days: s.days.map((d: any) => {
