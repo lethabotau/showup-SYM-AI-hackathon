@@ -1,5 +1,7 @@
 # SHOWUP — DESIGN_SYSTEM.md
 
+> **Note (18 Oct 2026, Next.js migration):** the live stylesheets are in `styles/` (split copies of the original CSS, unchanged). `styles/main.css` / `styles/event.css` named below are reference copies, now in `archive/design-reference-styles/`. The values in this document still match.
+
 Document 2 of 4 · Read-only extraction · Source version `1792166501-1cda`
 
 > **Paths:** this document uses the original handoff layout. See "Where things are now" at the top of `SOURCE_MANIFEST.md` for where each path lives today, and `SOURCE_MANIFEST.md` §16 for how the standalone copy is now split into files.

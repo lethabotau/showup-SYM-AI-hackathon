@@ -2,7 +2,7 @@
 
 Branch `nextjs-migration`, based on `evan-branch` @ `1e4e797`. This audit only reads the repo; nothing outside this file was changed.
 
-**Start here:** read §0 and §8 (open questions) before approving Phase 2.
+**Status (18 Oct 2026):** approved and carried out. Q1–Q4 as recommended, with Next 14.2.35 + React 18.3.1 (not Next 15) and the archive layout in §7. See `README.md` for the result. §7's `lib/ui/utils/*.ts` etc. are as built. The page logic lives in `lib/ui/flow/` and `lib/ui/sample/`.
 
 ---
 

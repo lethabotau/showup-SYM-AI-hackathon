@@ -1,5 +1,11 @@
 # SHOWUP — SCREENS.md
 
+> **Note (18 Oct 2026, Next.js migration):** behaviour, copy, data model and fixtures below still match the code. Two things are out of date:
+> - Defect D1 is fixed in the code the app now runs. Screen changes scroll to the top and focus the heading, sheets take focus (so Escape works), and the flow's event page fills its red dots. Text describing the D1 effects as current is historical.
+> - The screenshots in `docs/design-references/screenshots/` predate that fix.
+>
+> Path mapping: `Main.dc.html` → `components/flow/**` (markup) + `lib/ui/flow/**` (logic). `Event.dc.html` → `components/sample/**` + `lib/ui/sample/**`. The originals are in `archive/showup-standalone/`.
+
 Document 3 of 4 · Read-only extraction · Source version `1792166501-1cda`
 
 > **Paths:** this document uses the original handoff layout. See "Where things are now" at the top of `SOURCE_MANIFEST.md` for where each path lives today, and `SOURCE_MANIFEST.md` §16 for how the standalone copy is now split into files.
