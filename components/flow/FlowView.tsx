@@ -4,7 +4,9 @@ import Landing from './screens/Landing';
 import Create from './screens/Create';
 import Join from './screens/Join';
 import Respond from './screens/Respond';
+import EventPage from './screens/EventPage';
 import ConditionsSheet from './sheets/ConditionsSheet';
+import ProposeSheet from './sheets/ProposeSheet';
 
 export default function FlowView({ v }: { v: any }) {
   return (
@@ -16,7 +18,9 @@ export default function FlowView({ v }: { v: any }) {
         {v.isCreate ? <Create v={v} /> : null}
         {v.isJoin ? <Join v={v} /> : null}
         {v.isRespond ? <Respond v={v} /> : null}
+        {v.isEvent ? <EventPage v={v} /> : null}
         {v.sheetOpen ? <ConditionsSheet v={v} /> : null}
+        {v.proposeOpen ? <ProposeSheet v={v} /> : null}
       </div>
     </div>
     </>
