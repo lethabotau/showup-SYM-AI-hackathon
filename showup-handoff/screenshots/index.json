@@ -1,0 +1,338 @@
+{
+ "01-landing": {
+  "note": "Landing, empty",
+  "files": [
+   "01-landing--390.png",
+   "01-landing--768.png",
+   "01-landing--1440.png"
+  ]
+ },
+ "02-landing-name-error": {
+  "note": "Landing, Next with empty name",
+  "files": [
+   "02-landing-name-error--390.png",
+   "02-landing-name-error--768.png",
+   "02-landing-name-error--1440.png"
+  ]
+ },
+ "03-create-initial": {
+  "note": "Create, no days picked, Create event disabled",
+  "files": [
+   "03-create-initial--390.png",
+   "03-create-initial--768.png",
+   "03-create-initial--1440.png"
+  ]
+ },
+ "04-create-filled-more-options": {
+  "note": "Create, two days selected, name filled, More options open",
+  "files": [
+   "04-create-filled-more-options--390.png",
+   "04-create-filled-more-options--768.png",
+   "04-create-filled-more-options--1440.png"
+  ]
+ },
+ "05-create-calendar-november": {
+  "note": "Create, calendar moved to November (Oct shown as previous-month link)",
+  "files": [
+   "05-create-calendar-november--390.png",
+   "05-create-calendar-november--768.png",
+   "05-create-calendar-november--1440.png"
+  ]
+ },
+ "06-respond-organiser-initial": {
+  "note": "Respond (organiser), all days Not free = slim rows",
+  "files": [
+   "06-respond-organiser-initial--390.png",
+   "06-respond-organiser-initial--768.png",
+   "06-respond-organiser-initial--1440.png"
+  ]
+ },
+ "07-respond-day-free": {
+  "note": "Day 1 Free: card expanded, whole window filled with clear glass",
+  "files": [
+   "07-respond-day-free--390.png",
+   "07-respond-day-free--768.png",
+   "07-respond-day-free--1440.png"
+  ]
+ },
+ "08-respond-day-favourite-7-11": {
+  "note": "Day 1 Favourite, timeline tapped at 7p then 11p \u2192 7pm \u2013 11pm (red glass)",
+  "files": [
+   "08-respond-day-favourite-7-11--390.png",
+   "08-respond-day-favourite-7-11--768.png",
+   "08-respond-day-favourite-7-11--1440.png"
+  ]
+ },
+ "09-respond-wheels-open": {
+  "note": "Time label tapped: stand-in From/Until wheels open inline",
+  "files": [
+   "09-respond-wheels-open--390.png",
+   "09-respond-wheels-open--768.png",
+   "09-respond-wheels-open--1440.png"
+  ]
+ },
+ "10-respond-split-ranges": {
+  "note": "\"Add another time\": second range on the same bar, each with Remove",
+  "files": [
+   "10-respond-split-ranges--390.png",
+   "10-respond-split-ranges--768.png",
+   "10-respond-split-ranges--1440.png"
+  ]
+ },
+ "11-respond-error-missing-willingness": {
+  "note": "Submit with a free day lacking Yes/If\u2026/No",
+  "files": [
+   "11-respond-error-missing-willingness--390.png",
+   "11-respond-error-missing-willingness--768.png",
+   "11-respond-error-missing-willingness--1440.png"
+  ]
+ },
+ "12-conditions-sheet-empty": {
+  "note": "Conditions sheet just opened",
+  "files": [
+   "12-conditions-sheet-empty--390.png",
+   "12-conditions-sheet-empty--768.png",
+   "12-conditions-sheet-empty--1440.png"
+  ]
+ },
+ "13-conditions-sheet-unsupported": {
+  "note": "Unsupported (negative) condition",
+  "files": [
+   "13-conditions-sheet-unsupported--390.png",
+   "13-conditions-sheet-unsupported--768.png",
+   "13-conditions-sheet-unsupported--1440.png"
+  ]
+ },
+ "14-conditions-sheet-chips": {
+  "note": "Chips appear ~600ms after typing stops",
+  "files": [
+   "14-conditions-sheet-chips--390.png",
+   "14-conditions-sheet-chips--768.png",
+   "14-conditions-sheet-chips--1440.png"
+  ]
+ },
+ "15-conditions-sheet-chip-editing": {
+  "note": "Number chip tapped: stepper + Remove",
+  "files": [
+   "15-conditions-sheet-chip-editing--390.png",
+   "15-conditions-sheet-chip-editing--768.png",
+   "15-conditions-sheet-chip-editing--1440.png"
+  ]
+ },
+ "16-respond-conditions-summary": {
+  "note": "Saved conditions summary + \"Use this for my other times too\"; day 2 Free",
+  "files": [
+   "16-respond-conditions-summary--390.png",
+   "16-respond-conditions-summary--768.png",
+   "16-respond-conditions-summary--1440.png"
+  ]
+ },
+ "17-event-fresh-organiser": {
+  "note": "Event page, organiser, only own response (\"Just you so far.\")",
+  "files": [
+   "17-event-fresh-organiser--390.png",
+   "17-event-fresh-organiser--768.png",
+   "17-event-fresh-organiser--1440.png"
+  ]
+ },
+ "18-event-fresh-copy-feedback": {
+  "note": "After Copy link (message depends on clipboard permission)",
+  "files": [
+   "18-event-fresh-copy-feedback--390.png",
+   "18-event-fresh-copy-feedback--768.png",
+   "18-event-fresh-copy-feedback--1440.png"
+  ]
+ },
+ "19-join": {
+  "note": "Join (guest), empty",
+  "files": [
+   "19-join--390.png",
+   "19-join--768.png",
+   "19-join--1440.png"
+  ]
+ },
+ "20-join-error-duplicate-name": {
+  "note": "Join with a name that already responded",
+  "files": [
+   "20-join-error-duplicate-name--390.png",
+   "20-join-error-duplicate-name--768.png",
+   "20-join-error-duplicate-name--1440.png"
+  ]
+ },
+ "21-respond-guest": {
+  "note": "Respond as guest (no \"Start with yours.\")",
+  "files": [
+   "21-respond-guest--390.png",
+   "21-respond-guest--768.png",
+   "21-respond-guest--1440.png"
+  ]
+ },
+ "22-event-guest": {
+  "note": "Event page, guest view (status line, best so far, dot rows, initials)",
+  "files": [
+   "22-event-guest--390.png",
+   "22-event-guest--768.png",
+   "22-event-guest--1440.png"
+  ]
+ },
+ "23-respond-editing": {
+  "note": "Edit my response: \"Back to event\" + \"Save changes\"",
+  "files": [
+   "23-respond-editing--390.png",
+   "23-respond-editing--768.png",
+   "23-respond-editing--1440.png"
+  ]
+ },
+ "24-landing-your-events": {
+  "note": "Landing with \"Your events\" (localStorage)",
+  "files": [
+   "24-landing-your-events--390.png",
+   "24-landing-your-events--768.png",
+   "24-landing-your-events--1440.png"
+  ]
+ },
+ "25-event-organiser-full": {
+  "note": "Event page, organiser, 2 responses (dots, initials, actions, invite)",
+  "files": [
+   "25-event-organiser-full--390.png",
+   "25-event-organiser-full--768.png",
+   "25-event-organiser-full--1440.png"
+  ]
+ },
+ "26-event-organiser-reminder": {
+  "note": "Draft reminder open",
+  "files": [
+   "26-event-organiser-reminder--390.png",
+   "26-event-organiser-reminder--768.png",
+   "26-event-organiser-reminder--1440.png"
+  ]
+ },
+ "27-propose-sheet": {
+  "note": "Propose a time sheet (flow)",
+  "files": [
+   "27-propose-sheet--390.png",
+   "27-propose-sheet--768.png",
+   "27-propose-sheet--1440.png"
+  ]
+ },
+ "28-propose-sheet-error": {
+  "note": "Propose: invalid minimum",
+  "files": [
+   "28-propose-sheet-error--390.png",
+   "28-propose-sheet-error--768.png",
+   "28-propose-sheet-error--1440.png"
+  ]
+ },
+ "29-event-organiser-proposal-saved": {
+  "note": "Proposal saved (prototype-only notice; status label changes)",
+  "files": [
+   "29-event-organiser-proposal-saved--390.png",
+   "29-event-organiser-proposal-saved--768.png",
+   "29-event-organiser-proposal-saved--1440.png"
+  ]
+ },
+ "30-seed-create": {
+  "note": "Create frame seed",
+  "files": [
+   "30-seed-create--390.png",
+   "30-seed-create--768.png",
+   "30-seed-create--1440.png"
+  ]
+ },
+ "31-seed-respond": {
+  "note": "Respond frame seed",
+  "files": [
+   "31-seed-respond--390.png",
+   "31-seed-respond--768.png",
+   "31-seed-respond--1440.png"
+  ]
+ },
+ "32-seed-event-fresh": {
+  "note": "Fresh event frame seed",
+  "files": [
+   "32-seed-event-fresh--390.png",
+   "32-seed-event-fresh--768.png",
+   "32-seed-event-fresh--1440.png"
+  ]
+ },
+ "33-seed-join": {
+  "note": "Join frame seed",
+  "files": [
+   "33-seed-join--390.png",
+   "33-seed-join--768.png",
+   "33-seed-join--1440.png"
+  ]
+ },
+ "34-seed-event-guest": {
+  "note": "Guest view frame seed (Alex + Jess fixtures)",
+  "files": [
+   "34-seed-event-guest--390.png",
+   "34-seed-event-guest--768.png",
+   "34-seed-event-guest--1440.png"
+  ]
+ },
+ "35-participant-respond": {
+  "note": "Respond, participant mode on fixed sample",
+  "files": [
+   "35-participant-respond--390.png",
+   "35-participant-respond--768.png",
+   "35-participant-respond--1440.png"
+  ]
+ },
+ "36-participant-saved": {
+  "note": "Participant saved block (\"Your response is in.\")",
+  "files": [
+   "36-participant-saved--390.png",
+   "36-participant-saved--768.png",
+   "36-participant-saved--1440.png"
+  ]
+ },
+ "37-sample-event": {
+  "note": "Sample event (fixed 8-person data)",
+  "files": [
+   "37-sample-event--390.png",
+   "37-sample-event--768.png",
+   "37-sample-event--1440.png"
+  ]
+ },
+ "38-sample-event-initial-tapped": {
+  "note": "Initials: tapped circle shows name",
+  "files": [
+   "38-sample-event-initial-tapped--390.png",
+   "38-sample-event-initial-tapped--768.png",
+   "38-sample-event-initial-tapped--1440.png"
+  ]
+ },
+ "39-sample-event-reminder": {
+  "note": "Sample: Draft reminder",
+  "files": [
+   "39-sample-event-reminder--390.png",
+   "39-sample-event-reminder--768.png",
+   "39-sample-event-reminder--1440.png"
+  ]
+ },
+ "40-sample-propose-sheet": {
+  "note": "Sample: Propose a time sheet",
+  "files": [
+   "40-sample-propose-sheet--390.png",
+   "40-sample-propose-sheet--768.png",
+   "40-sample-propose-sheet--1440.png"
+  ]
+ },
+ "41-sample-propose-error": {
+  "note": "Sample: deadline after event \u2192 error",
+  "files": [
+   "41-sample-propose-error--390.png",
+   "41-sample-propose-error--768.png",
+   "41-sample-propose-error--1440.png"
+  ]
+ },
+ "42-sample-proposal-saved": {
+  "note": "Sample: proposal saved notice",
+  "files": [
+   "42-sample-proposal-saved--390.png",
+   "42-sample-proposal-saved--768.png",
+   "42-sample-proposal-saved--1440.png"
+  ]
+ }
+}
