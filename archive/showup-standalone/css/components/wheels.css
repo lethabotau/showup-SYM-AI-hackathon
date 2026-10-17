@@ -1,0 +1,15 @@
+/* Wheels (stand-in until the supplied component is attached) */
+.wheels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3);width:100%;max-width:360px}
+.wheel-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.wheel-label{font-size:13px;font-weight:500;color:var(--text-muted)}
+.wheel{position:relative;height:200px;border-radius:16px;overflow:hidden}
+.wheel-band{position:absolute;left:6px;right:6px;top:80px;height:40px;border-radius:12px}
+.wheel-scroll{position:relative;z-index:1;height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 32%,#000 68%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 32%,#000 68%,transparent 100%)}
+.wheel-scroll::-webkit-scrollbar{display:none}
+.wheel-scroll:focus{outline:none}
+.wheel:focus-within{outline:2px solid #333333;outline-offset:2px}
+.wheel-pad{height:80px}
+.w-item{height:40px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;font-size:17px;color:var(--text-muted);font-variant-numeric:tabular-nums;cursor:pointer;user-select:none;transition:color 150ms var(--ease-out)}
+.w-item.is-sel{color:#333333;font-weight:500}
+.wheel-done{align-self:flex-start}
+
