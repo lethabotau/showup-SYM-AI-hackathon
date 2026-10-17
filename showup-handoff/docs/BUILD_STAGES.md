@@ -2,6 +2,8 @@
 
 Document 4 of 4 · Read-only extraction · Source version `1792166501-1cda`
 
+> **Paths:** this document uses the original handoff layout. See "Where things are now" at the top of `SOURCE_MANIFEST.md` for where each path lives today, and `SOURCE_MANIFEST.md` §16 for how the standalone copy is now split into files.
+
 This document is a sequence of short prompts for an implementing agent (Sym AI or similar). Each prompt stands on its own: it says what to read, what to build, what must not change, how to check it, and where to stop. **Run one stage per session and check its acceptance tests before starting the next.**
 
 The handoff package that every stage refers to:
@@ -36,7 +38,7 @@ Both routes then share **§3, Integration readiness**, and are bounded by **§4,
 
 **Two stages in both routes are blocked on you, not on the implementer:**
 - **Wheel picker swap** (A3 / part of B4): needs the real `time-wheel-picker.html`, which has never been received.
-- **`componentDidUpdate` fix** (A2): **done** in `src/showup-standalone/` (authorised; see `SOURCE_MANIFEST.md` §15). The canvas copy is unchanged. Route B avoids the defect by design; see B1.
+- **`componentDidUpdate` fix** (A2): **done** in `src/showup-standalone/` and mirrored into the canvas copy `src/showup-source/` (authorised; see `SOURCE_MANIFEST.md` §15). Route B avoids the defect by design; see B1.
 
 ---
 
@@ -73,7 +75,7 @@ Both routes then share **§3, Integration readiness**, and are bounded by **§4,
   1. In both files, stop relying on the second argument. Keep a snapshot of the previous state on the instance (for example `this._prev`), compare it with `this.state` wherever the code currently reads `prevState`, then update the snapshot at the end of the method.
   2. Initialise the snapshot in `componentDidMount`.
   3. Change nothing else in either method.
-- **Preservation rules:** no CSS, copy or markup changes; the `startAt` Tweak logic is untouched. This also changes the canvas build, so mirror the edit into the canvas copy only if the owner asks.
+- **Preservation rules:** no CSS, copy or markup changes; the `startAt` Tweak logic is untouched. This also changes the canvas build; the owner asked for the edit to be mirrored there, and it was.
 - **Acceptance tests:**
   - No console errors on any state.
   - Landing → Next scrolls to the top and focuses the Create heading.
@@ -492,7 +494,7 @@ These are open questions only; none of them has been answered here. They fall in
 
 | Item | Kind |
 |---|---|
-| `componentDidUpdate` defect (D1): scroll and focus, sheet Escape, flow red dots, participant focus | Fixed in `src/showup-standalone/` (A2). Participant "Saved" focus and propose-sheet focus not yet re-checked; the canvas copy still has the defect |
+| `componentDidUpdate` defect (D1): scroll and focus, sheet Escape, flow red dots, participant focus | Fixed in `src/showup-standalone/` (A2). Participant "Saved" focus and propose-sheet focus not yet re-checked; the fix is also in the canvas copy |
 | Supplied wheel picker not integrated (D3) | Implementation gap (A3; awaiting file) |
 | Wordmark dot detached (D2) | Implementation gap, cosmetic; needs a decision whether to correct it |
 | `event.note` captured, never shown | Documentation gap: where it appears and who sees it |

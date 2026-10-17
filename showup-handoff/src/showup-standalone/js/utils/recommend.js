@@ -30,23 +30,6 @@ function bestWindow(ev, slotId, viable) {
   }
   return best;
 }
-function dotRowsFrom(days, bestId, grown, settled) {
-  return days.map(function (d) {
-    var dots = [];
-    for (var i = 0; i < d.free; i++) {
-      var red = i < d.go;
-      dots.push({ redCls: 'dot-red glass-red' + (red && grown ? ' is-on' : ''), delay: String(settled || !red ? 0 : i * 40) });
-    }
-    var spoken = d.time ? d.time.replace(' – ', ' to ') : '';
-    return {
-      title: d.title, time: d.time || '', hasTime: !!d.time && d.free > 0, dots: dots,
-      go: String(d.go), free: String(d.free), hasFree: d.free > 0, noFree: d.free === 0,
-      cls: 'dr' + (d.go === 0 ? ' is-dim' : ''),
-      numCls: 'dr-go' + (bestId && d.id === bestId ? ' is-best' : ''),
-      aria: d.free === 0 ? d.title + ': nobody free' : d.title + (spoken ? ', ' + spoken : '') + ': ' + d.go + ' of ' + d.free + ' free would go'
-    };
-  });
-}
 /* Per day: the window where the most people would go (or, if nobody would, where most are free), counting who covers all of it. */
 function coverCount(list, slotId, w) { return list.filter(function (r) { return (r.ranges[slotId] || []).some(function (rg) { return rg.s <= w.s && rg.e >= w.e; }); }).length; }
 function dayDots(ev, d) {

@@ -275,6 +275,7 @@
     var script = doc.querySelector('script[data-dc-script]');
     var meta = null;
     try { meta = JSON.parse(script && script.getAttribute('data-props') || 'null'); } catch (e) { meta = null; }
+    if (!meta && window.DCMeta) meta = window.DCMeta;
     var props = {}, preview = null;
     if (meta && typeof meta === 'object') Object.keys(meta).forEach(function (k) {
       if (k === '$preview') preview = meta[k];
@@ -297,7 +298,9 @@
     var ctx = { name: name, hoisted: {} };
     var Logic;
     try {
-      Logic = new Function('DCLogic', 'StreamableLogic', 'React', src.js + '\n;return (typeof Component!=="undefined"&&Component)||undefined;')(DCLogic, DCLogic, R) || DCLogic;
+      // Pages that keep their logic in external files register a factory (window.DCComponentFactory) instead of an inline <script data-dc-script>.
+      if (typeof window.DCComponentFactory === 'function') Logic = window.DCComponentFactory(DCLogic, DCLogic, R) || DCLogic;
+      else Logic = new Function('DCLogic', 'StreamableLogic', 'React', src.js + '\n;return (typeof Component!=="undefined"&&Component)||undefined;')(DCLogic, DCLogic, R) || DCLogic;
     } catch (e) { console.error('[standalone-support] script error in ' + name + ':', e); Logic = DCLogic; }
 
     var tpl = compile(src.template, ctx);

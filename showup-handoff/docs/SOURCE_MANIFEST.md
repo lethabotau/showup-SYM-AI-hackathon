@@ -4,6 +4,21 @@ Document 1 of 4 · Read-only extraction · Source version: Design canvas artifac
 
 All facts below were taken from the published source files, which were downloaded from the canvas and confirmed byte-identical to the working copies (`SHA256SUMS.txt`). Nothing in the application was modified.
 
+## Where things are now
+
+This document was written against the original handoff layout. The repository has since been reorganised (no content change from the move itself), so the paths used in the text map as follows:
+
+| Path used in the text | Where it is now |
+|---|---|
+| `SOURCE_MANIFEST.md`, `DESIGN_SYSTEM.md`, `SCREENS.md`, `BUILD_STAGES.md` | `showup-handoff/docs/` |
+| `screenshots/`, `screenshots/index.json` | `showup-handoff/design-reference/screenshots/` |
+| `styles/main.css`, `styles/event.css` | `showup-handoff/design-reference/styles/` (reference copies of the original CSS; the app now uses `src/showup-standalone/css/`) |
+| `project/*.dc.html`, `project/canvas.json` (the canvas source) | `showup-handoff/src/showup-source/project/` |
+| `showup-standalone/` (the runnable copy) | `showup-handoff/src/showup-standalone/` |
+| `showup-source.zip`, `showup-standalone.zip`, `SHA256SUMS.txt` | `showup-handoff/archives/` |
+
+The standalone copy has also been split into files; see `SOURCE_MANIFEST.md` §16.
+
 ---
 
 ## 0. Critical findings (read first)
@@ -13,7 +28,7 @@ All facts below were taken from the published source files, which were downloade
 1. **The app is not a conventional web project, but it now has a standalone copy that runs anywhere.** The source is a set of **Design Component files (`*.dc.html`)**. Inside the canvas they run on the host's `support.js`, which turns out to be **React 18.3.1 + ReactDOM 18.3.1 plus a template layer**. That host file is not part of the project. `showup-standalone.zip` replaces it with `standalone-support.js` (§14), which I wrote for this handoff, plus vendored React 18.3.1. The standalone copy was tested against the real canvas runtime: same behaviour on every check, and pixel-identical screenshots apart from timing artefacts (§14.4).
 2. **The supplied wheel-style time picker is STILL MISSING. Fix 1 could not be done.** The 03:30 message says `time-wheel-picker.html` is attached, but no such file arrived. The upload folder holds only the five text briefs (checked at 03:30 and again before this update). The wheels in both the canvas and the standalone copy are still the **stand-in inside `Main.dc.html`** (§7). §7 lists the exact integration points, ready for the swap once the file arrives.
 3. **Only two files are hand-authored.** `Main.dc.html` (the whole flow) and `Event.dc.html` (the fixed sample event). The other 14 `.dc.html` files are **mechanical copies** that differ only in a start screen, a title, a preview size and link targets (§3.3).
-4. **The approved canvas build has a lifecycle defect** (found while reading the canvas runtime, and confirmed in it). The host calls `componentDidUpdate(prevProps)` **without `prevState`**. Both authored files read `prevState`, so their `componentDidUpdate` throws on every update. The canvas catches the error and logs it, and the page keeps working, but several behaviours silently never happen (§15). This was **not fixed**, because the fixes weren't authorised. The standalone copy reproduced it on purpose so that it matched the canvas. **Update:** it is now fixed in `src/showup-standalone/` (§15). The canvas copy in `src/showup-source/` and the zips in `archives/` still contain the defect.
+4. **The approved canvas build has a lifecycle defect** (found while reading the canvas runtime, and confirmed in it). The host calls `componentDidUpdate(prevProps)` **without `prevState`**. Both authored files read `prevState`, so their `componentDidUpdate` throws on every update. The canvas catches the error and logs it, and the page keeps working, but several behaviours silently never happen (§15). This was **not fixed**, because the fixes weren't authorised. The standalone copy reproduced it on purpose so that it matched the canvas. **Update:** it is now fixed in `src/showup-standalone/` (§15). It is also fixed in the canvas copy `src/showup-source/` and in the zips in `archives/`, which were rebuilt.
 
 ---
 
@@ -285,7 +300,7 @@ Fonts: when online, the files' own Google Fonts link loads Manrope. Offline, `st
 - [x] Recorded storage keys, external URLs and browser APIs
 - [x] Built `showup-standalone.zip` (`Main.dc.html` + `Event.dc.html` with only line 6 changed, `standalone-support.js`, React 18.3.1, Manrope) and verified it against the real canvas runtime (§14.4)
 - [ ] **Supply `time-wheel-picker.html`.** Still not received (Fix 1 blocked); the stand-in must not be treated as approved
-- [x] Authorised and applied the `componentDidUpdate` fix to `src/showup-standalone/` (§15). The canvas copy in `src/showup-source/` was left unchanged
+- [x] Authorised and applied the `componentDidUpdate` fix to `src/showup-standalone/` (§15). The same edit was mirrored into the 16 canvas files in `src/showup-source/project/`, and the checksums and zips were regenerated
 - [ ] Decide the runtime route for the receiving platform (run the standalone copy as-is, or port to React). See Document 4
 - [x] Reference screenshots can now be captured locally (Document 3)
 
@@ -347,7 +362,7 @@ The reference was **the canvas's own runtime** (`dc-runtime.js` from the artifac
 
 ## 15. Defect in the approved build: `componentDidUpdate` never receives `prevState`
 
-**Status: fixed in `src/showup-standalone/` (`Main.dc.html` and `Event.dc.html`). Still present in `src/showup-source/` (the canvas copy) and in the zips in `archives/`.** The text below describes the defect as it was in the approved build.
+**Status: fixed in `src/showup-standalone/` (`Main.dc.html` and `Event.dc.html`), mirrored into the canvas copy `src/showup-source/` (all 16 files), and the zips in `archives/` were rebuilt.** The text below describes the defect as it was in the approved build.
 
 Both `Main.dc.html` (`componentDidUpdate(prevProps, prevState)`, reading `prevState.screen`, `.sheet`, `.proposeOpen`, `.phase`) and `Event.dc.html` (reading `prevState.proposeOpen`) assume React's two-argument signature. The canvas host passes only `prevProps`, so the method throws `TypeError: Cannot read properties of undefined` after its first statement on every update. The canvas logs the error and carries on.
 
@@ -359,4 +374,45 @@ Both `Main.dc.html` (`componentDidUpdate(prevProps, prevState)`, reading `prevSt
 - Stand-in wheels are not re-synced after timeline taps while they are open (`syncWheels` never runs).
 - The `startAt` Tweak change still works, because its check runs before the throw.
 
-**Fix (applied to the standalone copy only):** the logic now tracks its own previous state instead of relying on the second argument. Each page sets `this._prev = this.state` in `componentDidMount`. At the top of `componentDidUpdate` it reads `var prevState = this._prev || this.state;` and then stores `this._prev = this.state`. Nothing else in either method changed, and `standalone-support.js` still passes only `prevProps`, as the canvas does. Checked in headless Chrome: Landing to Create scrolls to the top, Create to Respond focuses the heading, opening "If…" moves focus into the sheet, Escape closes it without a click, the red dots fill on the flow's event page (4 of 4, previously 0 of 4), and there are no console errors. Not checked: the participant "Saved" block focus and the propose sheet focus. Mirroring the fix into the canvas copy would change the approved source files and their checksums, so it has not been done.
+**Fix (applied to the standalone copy and the canvas copy):** the logic now tracks its own previous state instead of relying on the second argument. Each page sets `this._prev = this.state` in `componentDidMount`. At the top of `componentDidUpdate` it reads `var prevState = this._prev || this.state;` and then stores `this._prev = this.state`. Nothing else in either method changed, and `standalone-support.js` still passes only `prevProps`, as the canvas does. Checked in headless Chrome: Landing to Create scrolls to the top, Create to Respond focuses the heading, opening "If…" moves focus into the sheet, Escape closes it without a click, the red dots fill on the flow's event page (4 of 4, previously 0 of 4), and there are no console errors. Not checked: the participant "Saved" block focus and the propose sheet focus. The same edit was then mirrored into the 16 canvas files; the Main-style files received the text the standalone `Main.dc.html` has, and the two Event files the text of the standalone `Event.dc.html`. These canvas files were not run in a browser (they need the canvas runtime), and their checksums were regenerated.
+
+---
+
+## 16. Restructure of the standalone copy (after the handoff)
+
+`src/showup-standalone/` was reorganised without changing what the app does. Its behaviour was compared with the committed version before the restructure at 27 steps of a scripted run (Landing, Create, Respond, the conditions sheet, Event, Join, guest responses, the sample event and its propose sheet, at 1440px): every step produced identical render values (handler source included), component state, page markup, scroll position and focused element, with no console errors.
+
+**Layout**
+```
+src/showup-standalone/
+├── Main.dc.html, Event.dc.html     templates only (the markup); no inline <style> or <script> code
+├── standalone-support.js           the runtime stand-in (still a classic script)
+├── css/                            variables, reset, base, layout, transitions, event;
+│   ├── components/                 materials, buttons, fields, segmented, wheels
+│   └── screens/                    landing, create, respond, join, event-flow, sheets
+├── js/
+│   ├── config.js                   storage keys, TODAY, FRESH_LINK, ITEM_H, FAMILY, DEFAULT_START
+│   ├── state.js                    baseState, respondFor, seed
+│   ├── registry.js                 Showup.register / Showup.mix (shared by both pages)
+│   ├── main.js                     entry for Main.dc.html: builds the Component class
+│   ├── data/                       constants, fixtures
+│   ├── utils/                      helpers, format, dates, recommend, dot-rows, conditions-parser
+│   ├── services/storage.js         the five localStorage functions
+│   ├── components/                 app, wheels, landing, create, join, respond,
+│   │                               conditions-sheet, event-page, propose-sheet
+│   └── sample/                     the same idea for Event.dc.html: main.js, constants.js,
+│       └── components/             helpers.js, and app, results, invite, propose-sheet
+├── vendor/, fonts/
+```
+
+**How it fits together**
+- Every file is a plain script, not an ES module, so double-clicking `Main.dc.html` still works. The scripts are listed in each page's `<head>` before `standalone-support.js` (the runtime swallows the rest of the page as raw text, so they cannot come later).
+- Each component file is a class whose methods are mixed into the page's `Component` class by `Showup.mix` (the same property descriptors a class body would give). Each one also owns the part of `renderVals` for its screen (`landingVals`, `createVals`, `respondVals`, and so on); `renderVals` in `components/app.js` merges them in the same order the original object literal listed them.
+- `main.js` registers `window.DCMeta` (the prop defaults that used to sit in the inline script's `data-props`) and `window.DCComponentFactory`. `standalone-support.js` now calls that factory when a page has one, and falls back to the old inline-script path otherwise. Its parsing and template code are unchanged.
+- The template markup stays in the `.dc.html` files, because the runtime compiles it from the raw page text.
+
+**Small changes made along the way**
+- `dotRowsFrom` was identical in both pages, so it is now one file, `js/utils/dot-rows.js`, loaded by both.
+- The one static inline style (`margin-top: 0` on `#best-label`) moved to `css/screens/event-flow.css` as `#best-label{margin-top:0}`, which gives the same computed value. Six other `style=` attributes remain because they hold per-render values (`transform`, `left`/`width`, `transition-delay`).
+- The `componentDidUpdate` fix (§15) was also applied to the canvas copy, and `archives/SHA256SUMS.txt` and `src/showup-source/SHA256SUMS.txt` were regenerated for the 17 canvas files.
+

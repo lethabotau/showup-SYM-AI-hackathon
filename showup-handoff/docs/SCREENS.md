@@ -2,6 +2,8 @@
 
 Document 3 of 4 · Read-only extraction · Source version `1792166501-1cda`
 
+> **Paths:** this document uses the original handoff layout. See "Where things are now" at the top of `SOURCE_MANIFEST.md` for where each path lives today, and `SOURCE_MANIFEST.md` §16 for how the standalone copy is now split into files.
+
 Every screen and behaviour below was taken from `project/Main.dc.html` and `project/Event.dc.html`, then confirmed by driving the build with the canvas's own runtime (React 18.3.1 + the canvas template layer, run locally in Chromium). Reference screenshots are in `screenshots/`, as 42 states × 3 widths; §11 lists them.
 
 **Status labels used throughout:**
@@ -16,7 +18,7 @@ Every screen and behaviour below was taken from `project/Main.dc.html` and `proj
 
 ## 0. Defects visible in the approved build
 
-These were observed in the canvas runtime and reproduced in the standalone copy. **D1 is now fixed in `src/showup-standalone/`** and remains in the canvas copy (`src/showup-source/`); D2 and D3 are unchanged. The screenshots in `design-reference/screenshots/` were captured before the D1 fix.
+These were observed in the canvas runtime and reproduced in the standalone copy. **D1 is now fixed** in `src/showup-standalone/` and in the canvas copy (`src/showup-source/`); D2 and D3 are unchanged. The screenshots in `design-reference/screenshots/` were captured before the D1 fix.
 
 | # | Defect | Effect on screens |
 |---|---|---|

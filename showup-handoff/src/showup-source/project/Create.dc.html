@@ -1193,7 +1193,7 @@ class Component extends DCLogic {
     this.wheelDefs = {}; this.wheelEls = {}; this.wheelTimers = {};
   }
 
-  componentDidMount() { this.maybeGrowDiscs(); }
+  componentDidMount() { this._prev = this.state; this.maybeGrowDiscs(); }
 
   componentWillUnmount() {
     if (this.timer) clearTimeout(this.timer);
@@ -1202,7 +1202,9 @@ class Component extends DCLogic {
     var wt = this.wheelTimers; Object.keys(wt).forEach(function (k) { clearTimeout(wt[k]); });
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
+    var prevState = this._prev || this.state;
+    this._prev = this.state;
     if (prevProps && prevProps.startAt !== this.props.startAt) {
       this.setState(Object.assign(seed(this.props.startAt || DEFAULT_START), { discsGrown: this.state.discsGrown }));
       return;

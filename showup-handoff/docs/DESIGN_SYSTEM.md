@@ -2,6 +2,8 @@
 
 Document 2 of 4 · Read-only extraction · Source version `1792166501-1cda`
 
+> **Paths:** this document uses the original handoff layout. See "Where things are now" at the top of `SOURCE_MANIFEST.md` for where each path lives today, and `SOURCE_MANIFEST.md` §16 for how the standalone copy is now split into files.
+
 Every value here was copied from the implemented CSS and script. The complete stylesheets are exported verbatim alongside this document:
 
 - `styles/main.css` — the `<style>` block of `project/Main.dc.html` (365 lines): the whole flow plus the shared system

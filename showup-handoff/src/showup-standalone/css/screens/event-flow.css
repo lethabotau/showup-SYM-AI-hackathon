@@ -50,4 +50,4 @@
 .reminder .btn-row .btn,.proposal .btn-row .btn{flex:0 0 auto}
 .ev-links{display:flex;flex-wrap:wrap;gap:0 var(--space-5)}
 .ev-links .text-btn,.ev-links a.text-btn{font-size:14px;font-weight:400;color:var(--text-muted)}
-
+#best-label{margin-top:0}

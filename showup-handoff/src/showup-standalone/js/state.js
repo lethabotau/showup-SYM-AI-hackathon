@@ -1,0 +1,33 @@
+function baseState() {
+  return {
+    screen: 'landing', mode: 'organiser', name: '', nameError: '',
+    orgName: '', pickDays: [], calMonth: TODAY.slice(0, 7), from: 1020, until: 1440, moreOpen: false, note: '',
+    event: null, myName: '', editing: false, joinName: '', joinError: '',
+    slots: [], win: { s: 1020, e: 1440 },
+    avail: {}, ranges: {}, openWheel: {}, will: {}, conds: {}, condText: {}, applied: {},
+    errors: {}, formError: '', noneWork: false, phase: 'editing', dirty: false,
+    sheet: null, sheetClosing: false, liveMsg: '', linkMsg: '', remMsg: '', reminderOpen: false,
+    proposeOpen: false, proposeClosing: false, propForm: null, propError: '', activePerson: null,
+    myEvents: [], leaving: false, anim: ''
+  };
+}
+function respondFor(ev, mode, myName) {
+  var o = { event: ev, mode: mode, myName: myName, slots: clone(ev.slots), win: clone(ev.win) };
+  return Object.assign(o, emptyMaps(ev.slots));
+}
+function seed(startAt) {
+  var s = baseState();
+  if (startAt === 'landing') { s.myEvents = loadMyEvents() || []; return s; }
+  s.name = 'Weekend plans';
+  if (startAt === 'create') { s.screen = 'create'; s.orgName = 'Alex'; s.pickDays = ['2026-10-23', '2026-10-24']; return s; }
+  if (startAt === 'participant') {
+    s.screen = 'respond'; s.mode = 'participant';
+    s.slots = clone(SAMPLE_SLOTS); s.win = clone(SAMPLE_WINDOW);
+    return Object.assign(s, emptyMaps(s.slots));
+  }
+  if (startAt === 'respond') { Object.assign(s, respondFor(demoEvent([]), 'organiser', 'Alex')); s.screen = 'respond'; return s; }
+  if (startAt === 'fresh') { Object.assign(s, respondFor(demoEvent([clone(ORG_RESP)]), 'organiser', 'Alex')); s.screen = 'event'; return s; }
+  if (startAt === 'join') { Object.assign(s, respondFor(demoEvent([clone(ORG_RESP)]), 'guest', '')); s.screen = 'join'; return s; }
+  if (startAt === 'guest') { Object.assign(s, respondFor(demoEvent([clone(ORG_RESP), clone(GUEST_RESP)]), 'guest', 'Jess')); s.screen = 'event'; return s; }
+  return s;
+}

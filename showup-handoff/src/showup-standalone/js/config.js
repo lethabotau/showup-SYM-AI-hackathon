@@ -1,3 +1,5 @@
+var FAMILY = 'desktop';
+var DEFAULT_START = 'landing';
 var STORE_KEY = 'showup-proto-flow';
 var EVENTS_KEY = 'showup-events';
 var EV_PREFIX = 'showup-ev-';

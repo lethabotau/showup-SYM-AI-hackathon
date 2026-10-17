@@ -401,6 +401,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     var self = this;
+    this._prev = this.state;
     if (!this.state.grown) {
       this.timers.grow = setTimeout(function () {
         self.setState({ grown: true });
@@ -412,7 +413,9 @@ class Component extends DCLogic {
 
   componentWillUnmount() { var t = this.timers; Object.keys(t).forEach(function (k) { clearTimeout(t[k]); }); }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
+    var prevState = this._prev || this.state;
+    this._prev = this.state;
     if (!prevState.proposeOpen && this.state.proposeOpen && this.sheetEl) {
       try { this.sheetEl.focus({ preventScroll: true }); } catch (e) {}
     }
