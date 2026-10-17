@@ -4,7 +4,7 @@
  * existing JSON so the engine can run on it unchanged.
  */
 
-/** Minutes since midnight; 1440 = 12am at the end of the day. */
+/** Minutes since the day's midnight, end exclusive; values past 1440 are after midnight (1500 = 1am). */
 export interface Range { s: number; e: number }
 
 /** The organiser's time window for every candidate day. */
