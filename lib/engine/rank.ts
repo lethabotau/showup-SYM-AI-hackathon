@@ -17,27 +17,33 @@ export interface RankOptions {
   favourites?: boolean;
 }
 
-/** Negative when `a` is earlier than `b`: by date (`iso` when both slots have one, else event order), then start time. */
-function earlier(a: RankedSlot, ai: number, b: RankedSlot, bi: number): number {
-  if (a.slot.iso && b.slot.iso) {
-    if (a.slot.iso !== b.slot.iso) return a.slot.iso < b.slot.iso ? -1 : 1;
-  } else if (ai !== bi) {
-    return ai - bi;
-  }
-  return (a.window?.s ?? 0) - (b.window?.s ?? 0);
+/**
+ * Negative when `a` starts earlier than `b`. Days compare by `iso` date when every day has one, else by
+ * event order (mixing the two isn't transitive); then by start time; then creation order.
+ */
+function earlier(a: RankedSlot, ai: number, b: RankedSlot, bi: number, byDate: boolean): number {
+  if (byDate && a.slot.iso !== b.slot.iso) return a.slot.iso! < b.slot.iso! ? -1 : 1;
+  if (!byDate && ai !== bi) return ai - bi;
+  const t = (a.window?.s ?? 0) - (b.window?.s ?? 0);
+  return t !== 0 ? t : ai - bi;
 }
 
 /**
- * Ranks the event's slots. Each slot is judged at its best eligible time (see slotStats), within the
- * organiser's window. A slot where nobody would go is never best. Otherwise, in order:
+ * Ranks the event's days by their chosen fixed-duration slot (see slotStats), using each day's `win` or
+ * else the event window, and the event duration. A day where nobody would go is never best; when no day
+ * has anyone viable, `best` is null ("No viable plan yet"). Otherwise, in order:
  *   1. the largest viable group,
  *   2. the most Favourites among that group (skipped when `favourites: false`),
- *   3. the earliest eligible date and time,
- *   4. the earlier slot in event order.
+ *   3. the earliest start (date, then time),
+ *   4. creation order.
  */
 export function rankSlots(ev: EventData, opts: RankOptions = {}): Ranking {
   const useFav = opts.favourites !== false;
-  const days: RankedSlot[] = ev.slots.map((slot) => ({ slot, ...slotStats(slot, ev.responses || [], ev.win) }));
+  const byDate = ev.slots.every((sl) => !!sl.iso);
+  const days: RankedSlot[] = ev.slots.map((slot) => ({
+    slot,
+    ...slotStats(slot, ev.responses || [], slot.win ?? ev.win, { duration: ev.duration, favourites: useFav })
+  }));
   let best: RankedSlot | null = null;
   let bestIdx = -1;
   days.forEach((d, i) => {
@@ -45,7 +51,7 @@ export function rankSlots(ev: EventData, opts: RankOptions = {}): Ranking {
     if (best) {
       if (d.go !== best.go) { if (d.go < best.go) return; }
       else if (useFav && d.favourites !== best.favourites) { if (d.favourites < best.favourites) return; }
-      else if (earlier(d, i, best, bestIdx) >= 0) return;
+      else if (earlier(d, i, best, bestIdx, byDate) >= 0) return;
     }
     best = d;
     bestIdx = i;

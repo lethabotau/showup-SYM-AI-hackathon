@@ -1,22 +1,22 @@
 # Coordination engine (`lib/engine/`)
 
-The engine works out who would actually go **together** on each candidate day, at what time, and which day is best. It is pure strict TypeScript with no dependencies and no I/O.
+The engine works out who would actually go **together** in each fixed-duration slot of each candidate day, and which slot is best. It is pure strict TypeScript with no dependencies and no I/O. The rules it implements are in `docs/PRODUCT-RULES.md`, which wins over this file.
 
-It is **not** the same as the prototype's `lib/ui/utils/recommend.ts`, which the UI still uses for now. The prototype works out viability per day over everyone free that day, ignoring their times, so six people free at six different hours count as six attendees. The engine works it out over the people whose ranges actually overlap.
+It is **not** the same as the prototype's `lib/ui/utils/recommend.ts`, which the UI still uses for now. The prototype works out viability per day over everyone free that day, ignoring their times, so six people free at six different hours count as six attendees.
 
 ```ts
 import { viableGroup, slotStats, rankSlots, slotWindow } from '@/lib/engine';
 
-viableGroup(slot, responses, win)  // { group: ['Alex', ...], rounds: [{ removed: ['Jess'], reason, failed }] }
-slotStats(slot, responses, win)    // free, go, viable, favourites, window, intervals
-rankSlots(event)                   // { days: [...per-slot stats], best }
+viableGroup(day, responses, win, { duration })  // { group: ['Alex', ...], rounds: [{ removed: ['Jess'], reason, failed }] }
+slotStats(day, responses, win, { duration })    // the day's chosen slot (free, go, favourites, window, ...) + every slot
+rankSlots(event)                   // { days: [...per-day stats], best }; best = null is "No viable plan yet"
 rankSlots(event, { favourites: false })  // skip the Favourites tie-break
-slotWindow(event.win, slot, stats) // the display window + dot counts for a day
+slotWindow(event.win, day, stats)  // the prototype's display window + dot counts (legacy, see C1)
 ```
 
-Without `win`, ranges aren't clipped to the event window.
+`win` falls back to the day's own `win`; one is required. `rankSlots` uses `day.win ?? event.win` and `event.duration` (default 120).
 
-Inputs are the JSON the UI already stores (`Response`, `Slot`, `Condition` in `lib/engine/types.ts`). A participant's id is their display name (`who`), which Join keeps unique.
+Inputs are the JSON the UI already stores (`Response`, `Slot`, `Condition` in `lib/engine/types.ts`). In the engine a `Slot` is a candidate day; a time slot is `TimeSlotStats`. A participant's id is their display name (`who`), which Join keeps unique. `Response.favs` (Favourite ranges per day) is optional: without it, a day marked Favourite (`avail = 2`) uses its availability ranges as Favourite ranges. An explicit `favs` list, even an empty one, is used as is.
 
 ## Supported conditions
 
@@ -27,17 +27,18 @@ These apply only to people who answered **If…** for a day. **Yes** means they 
 | `{ type: 'person', name }` | someone with that name (case-insensitive) is in the group |
 | `{ type: 'min', n }` | the group, including them, has at least `parseInt(n)` people |
 
-People who are free (Free or Favourite) and said Yes or If… are the candidates.
+## Slots and viability
 
-## Time-aware viability
+Times are minutes since the day's midnight, end exclusive. Values past 1440 are after midnight, so a 10pm–1am window is 1320–1500 and its slots belong to the day it starts on.
 
-Ranges are minutes since the day's midnight, end exclusive and clipped to the event window. Values past 1440 are after midnight, so 9pm–2am is 1260–1560. Touching ranges (5–6pm and 6–7pm) don't overlap.
+- **Slots** start every 30 minutes from the day's window start and last the event duration. Every slot fits inside the window; a window shorter than the duration has no slots.
+- **Free for a slot**: not marked Not free (`avail = 0`), Yes or If…, and one of their ranges covers the whole slot. A person's touching or overlapping ranges are merged first (19–20 plus 20–21 covers 19–21). Gaps are never bridged, and different people's ranges never combine.
+- **Viable**: the slot's free people, minus every If… person whose conditions fail, all at once, repeated until nobody is removed. If… with no conditions counts as Yes.
+- **Favourites**: viable people whose Favourite range covers the whole slot.
 
-All candidates' range endpoints cut the day into segments. For each segment, the engine takes the candidates present throughout it, removes every If… person whose conditions fail, all at once, and repeats until nobody is removed. Adjacent segments with the same resulting group merge into one **eligible interval** (`intervals`, in time order). The day's result is its best interval: the largest group, then the most Favourites among that group, then the earliest. `go`, `viable`, `favourites` and `window` describe that interval, and `rounds` is the elimination trace from its start. `free` still counts everyone free that day, whatever their time or answer.
+Each day's headline numbers (`free`, `go`, `group`, `rounds`, `favourites`, `window`) come from its chosen slot: the largest viable group, then most Favourites, then earliest. If nobody is viable in any slot that day, it's the slot with the most free people, then earliest. `slots` lists every slot.
 
-So a condition is only met by people there **at the same time**: "if Priya comes" fails while Priya is absent, and "at least 4 of us" counts only those present together.
-
-**No duration policy.** Nothing in the product defines a minimum event length (only a 60-minute minimum response range). An eligible interval can be as short as the shortest overlap, and the engine doesn't discard short ones. A duration rule (minimum length, or "present for the whole event") would need to be specified first.
+So a condition is only met by people free for the **same slot**: "if Priya comes" fails while Priya isn't free then, and "at least 4 of us" counts only those free for that slot.
 
 ## Why this is the right answer: monotonicity
 
@@ -46,7 +47,7 @@ Both conditions are **monotone**: adding people to a group never makes one of th
 1. If two groups are each self-consistent (every member's conditions hold), so is their union. So there is exactly **one largest self-consistent group**.
 2. Elimination never removes anyone in that largest group, because their conditions hold in it and therefore in any bigger group they're part of. So elimination stops exactly there: the **greatest fixed point**. It takes at most *n* rounds, and the result doesn't depend on order.
 
-This holds separately at every time, over the people present then. The tests check it directly. For events with up to 10 candidates they enumerate every subset at every 15-minute step, confirm the largest consistent one is unique, pick the best time by the rules above, and confirm it equals the engine's group, window start and Favourites (2,000 random events).
+This holds separately for every slot, over that slot's free people. The tests check it directly. For events with up to 10 people they enumerate every subset in every slot, confirm the largest consistent one is unique and equals the engine's group, and check the day's chosen slot (2,000 random events, durations 30–180 minutes).
 
 ## Why negative dependencies are excluded
 
@@ -59,18 +60,18 @@ Supporting them would need a search with tie-breaking rules, and those rules hav
 
 ## Ranking
 
-A day where nobody would go is never best. Otherwise days are compared on:
+A day where nobody would go is never best; if no day has anyone viable, `best` is null. Otherwise days are compared by their chosen slot on:
 
 1. **Group size**: the most people who would actually go together.
-2. **Favourites**: how many of *that viable group* marked the day as a Favourite (`avail = 2`). A Favourite from someone who said No, who was eliminated, or who isn't there at that time doesn't count. `{ favourites: false }` skips this step.
-3. **The earliest eligible date/time.** If both slots have an `iso` date and the dates differ, the earlier date wins. Otherwise the earlier slot in event order wins, and for the same slot the earlier interval start. After midnight is later than the same evening.
-4. **Original order**: on a full tie the first slot is kept.
+2. **Favourites**: how many of *that viable group* have a Favourite range covering the slot. `{ favourites: false }` skips this step, both here and when choosing each day's slot.
+3. **The earliest start.** Days compare by `iso` date when every day has one, otherwise by event order (mixing the two isn't transitive). Then the slot's start time; after midnight is later than the same evening.
+4. **Creation order**: on a full tie the first day is kept.
 
 People free that day no longer break ties (the prototype used them as step 3). Example: Friday has 8 people free but only 4 would go together, and Saturday has 6 free who all go. Saturday wins.
 
 Kept from the prototype:
 
-- `slotWindow` (display window and dots) is unchanged: given the same group, it matches `recommend.ts`.
+- `slotWindow` (display window and dots) is unchanged: given the same people, it matches `recommend.ts`. It predates fixed slots and isn't used for ranking; C1 decides whether it stays.
 - A `min` whose `n` isn't a number (e.g. `'abc'`) never holds, so that person is removed. A `person` condition naming someone not in the event never holds either.
 
 ## Privacy
@@ -79,28 +80,17 @@ The elimination trace (`rounds`, with each round's `removed`, `reason` and `fail
 
 ## Tests (`npm run test:engine`)
 
-The command runs a strict typecheck and then Vitest (31 tests, about 3 s):
+The command runs a strict typecheck and then Vitest (50 tests, about 4 s):
 
 - **A6 values** from BACKEND_REQUIREMENTS, as named tests (`favourites: false`).
-- **Time-aware** (`time-aware.test.ts`):
-  - the 8-free/4-viable Friday against the 6/6 Saturday;
-  - six non-overlapping people;
-  - partial and touching overlaps;
-  - window clipping;
-  - cascading elimination;
-  - `min` counting only people present together;
-  - circular dependencies, together and apart;
-  - the Favourite, earliest-date, earliest-time and original-order tie-breaks;
-  - cross-midnight overlaps.
+- **Slots** (`slots.test.ts`): slot generation and per-day windows, short windows, A 19–21 / B 21–23 never both free, whole-slot coverage, range merging without bridging gaps, No and missing willingness excluded, free counted per slot, cross-midnight slots, Favourite-range coverage and the legacy fallback, transitive date ordering, creation order, and the most-free pick for days with nobody viable.
+- **Time-aware** (`time-aware.test.ts`), the Stage 1 cases on slots: the 8/4 Friday against the 6/6 Saturday, six non-overlapping people, partial and touching overlaps, the window boundary, cascading elimination, `min` counting only people free together, circular dependencies, the tie-breaks and cross-midnight overlaps.
 - **Favourites tie-break**: size ties, size beating Favourites, Favourites outside the group not counting, and the fallback to the earlier slot.
-- **Differential.** With everyone's range set to the whole window, the engine's free, go and group equal `recommend.ts` on 1,000 seeded events. With real ranges, the engine's group is always a subset of the prototype's day-level group, and strictly smaller on more than 500 of the 3,000+ slots. `slotWindow` matches the prototype's windows and dots.
-- **Brute force** (n ≤ 10), as above.
-- **Fixed point and trace** (up to 30 people, 2,000 events):
-  - the group is present throughout the chosen interval and self-consistent;
-  - replaying the rounds from the people present at its start reproduces the group, with each removal justified by a condition that really failed;
-  - intervals are ordered and non-empty.
+- **Differential.** With every answered day's range set to the whole window and one window-long slot, the engine's group equals `recommend.ts` and its free count equals the prototype's Yes/If… people, on 1,000 seeded events. With real ranges, every slot's group is a subset of the prototype's day-level group. `slotWindow` matches the prototype's windows and dots.
+- **Brute force** (n ≤ 10), as above, with its own 15-minute coverage scan instead of the engine's range merging.
+- **Fixed point and trace** (up to 30 people, 2,000 events): slot starts and lengths, each slot's free list, every group self-consistent, and replaying each slot's rounds reproduces its group.
 
-Reintroducing day-level viability makes 8 of these tests fail.
+Breaking range merging, bridging gaps, counting No as free, ignoring an empty `favs` list, picking the earliest slot on a day with nobody viable, or restoring the old date comparison each makes at least one test fail.
 
 ## Benchmark (`npm run bench:engine`)
 
@@ -120,3 +110,10 @@ Time-aware viability runs one elimination per segment instead of one per day. On
 | time-aware | 243–266 µs | 522–592 µs |
 
 That is about 2.4× slower, and still well under 1 ms per event at p95.
+
+Fixed-duration slots (default 2 h, the benchmark's events unchanged; 11% of their days have windows shorter than 2 h and so no slots, the rest average 7.8 slots), same machine, back-to-back runs:
+
+| engine | mean | p95 |
+|---|---|---|
+| time-aware segments (Stage 1) | 244–249 µs | 527–538 µs |
+| fixed-duration slots | 131–141 µs | 267–273 µs |

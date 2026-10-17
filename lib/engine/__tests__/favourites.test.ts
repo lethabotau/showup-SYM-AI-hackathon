@@ -22,8 +22,9 @@ describe('favourites tie-break', () => {
     const ev = event([
       person('Ana', [1, 'yes'], [2, 'yes']),   // favourite on b
       person('Ben', [1, 'yes'], [1, 'yes']),
-      person('Cleo', [1, 'no'], [0, null])     // free on a only: a has more free (3 vs 2)
+      person('Cleo', [1, 'if'], [0, null])     // free on a only (but eliminated): a has more free (3 vs 2)
     ]);
+    ev.responses[2]!.conds.a = [{ type: 'person', name: 'Zed' }];
     const r = rankSlots(ev);
     expect(r.days.map((d) => [d.slot.id, d.go, d.favourites, d.free])).toEqual([['a', 2, 0, 3], ['b', 2, 1, 2]]);
     expect(r.best?.slot.id).toBe('b');

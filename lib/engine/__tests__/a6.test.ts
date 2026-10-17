@@ -38,7 +38,7 @@ describe('A6: Alex + Jess', () => {
     const ev = alexAndJess();
     const d = rankSlots(ev, OLD).days.find((x) => x.slot.id === 'fri')!;
     expect([d.go, d.free]).toEqual([1, 2]);
-    const v = viableGroup('fri', ev.responses);
+    const v = viableGroup('fri', ev.responses, ev.win);
     expect(v.group).toEqual(['Alex']);
     expect(v.rounds).toHaveLength(1);
     expect(v.rounds[0]!.removed).toEqual(['Jess']);
@@ -51,7 +51,7 @@ describe('A6: Alex + Jess', () => {
     const ev = alexAndJess();
     const d = rankSlots(ev, OLD).days.find((x) => x.slot.id === 'sat')!;
     expect([d.go, d.free]).toEqual([2, 2]);
-    expect(viableGroup('sat', ev.responses)).toEqual({ group: ['Alex', 'Jess'], rounds: [] });
+    expect(viableGroup('sat', ev.responses, ev.win)).toEqual({ group: ['Alex', 'Jess'], rounds: [] });
     expect(dots(ev, 'sat')).toEqual({ time: '8 – 11pm', go: 2, free: 2 });
   });
 });

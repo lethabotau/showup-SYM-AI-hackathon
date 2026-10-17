@@ -16,6 +16,8 @@ export interface Slot {
   day?: string;
   title?: string;
   short?: string;
+  /** This day's window; overrides EventData.win. */
+  win?: Window;
 }
 
 /**
@@ -42,12 +44,19 @@ export interface Response {
   will: Record<string, Willingness | undefined>;
   conds: Record<string, Condition[] | null | undefined>;
   condText?: Record<string, string | undefined>;
+  /**
+   * Favourite ranges per day. When absent, a day marked Favourite (avail = 2) treats its availability
+   * ranges as Favourite ranges (the current UI's meaning). When present, only these count.
+   */
+  favs?: Record<string, Range[] | undefined>;
 }
 
 export interface EventData {
   slots: Slot[];
   win: Window;
   responses: Response[];
+  /** Event length in minutes (default 120). */
+  duration?: number;
 }
 
 /** Participant id used in engine output. Display names are unique within an event (Join rejects duplicates). */
