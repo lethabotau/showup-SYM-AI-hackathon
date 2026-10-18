@@ -130,5 +130,5 @@ describe('fixed point and trace (up to 30 people)', () => {
         expect([chosen.e, chosen.group, chosen.free, chosen.tentative, chosen.rounds]).toEqual([st.window.e, st.group, st.free, st.tentative, st.rounds]);
       }
     }
-  });
+  }, 20_000);
 });

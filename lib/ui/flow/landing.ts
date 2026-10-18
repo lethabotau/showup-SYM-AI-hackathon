@@ -3,6 +3,8 @@
 // (the original files shared globals through classic <script> tags). Types come later.
 import { loadEventData } from '../services/storage';
 import { respondFor } from '../state';
+import { loadOrganiserEvents } from '../services/organiser-events';
+import { isoFromDate, slotFromIso } from '../utils/dates';
 /* Landing screen */
 export class LandingMixin {
   next() {
@@ -19,11 +21,12 @@ export class LandingMixin {
 
   landingVals(s) {
     var self = this;
-    var myEvents = (s.myEvents || []).slice(0, 5).map(function (x) {
+    // Only real events created on this device, each opening its organiser link.
+    var myEvents = (s.screen === 'landing' ? loadOrganiserEvents() : []).slice(0, 5).map(function (x) {
+      var made = new Date(x.createdAt);
       return {
-        name: x.name, status: x.status || 'Collecting responses', roleLabel: x.role === 'organising' ? 'Organising' : 'Invited',
-        isLink: !!x.sample, isButton: !x.sample,
-        open: function () { self.openMyEvent(x); }
+        key: x.eventId, name: x.title, href: x.adminUrl, roleLabel: 'Organising',
+        status: isNaN(made.getTime()) ? '' : 'Created ' + slotFromIso(isoFromDate(made)).short,
       };
     });
     return {

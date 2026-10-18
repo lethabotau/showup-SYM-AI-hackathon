@@ -5,6 +5,7 @@ import { DAYS, MON, MONTHS } from '../data/constants';
 import { pad2 } from '../utils/format';
 import { isoFromDate, todayIso } from '../utils/dates';
 import { untilFromWheel, wheelMinute } from '../utils/wheel-time';
+import { saveOrganiserEvent } from '../services/organiser-events';
 /* Create screen: calendar, time window, name */
 export class CreateMixin {
   toggleDay(iso) {
@@ -39,7 +40,11 @@ export class CreateMixin {
       .then(function (res) { return res.json().then(function (j) { return { ok: res.ok, j: j }; }, function () { return { ok: false, j: null }; }); })
       .then(function (r) {
         var path = r.ok && r.j && r.j.organiserPath;
-        if (typeof path === 'string' && path.indexOf('/e/') === 0) { window.location.assign(path); return; }
+        if (typeof path === 'string' && path.indexOf('/e/') === 0) {
+          if (typeof r.j.id === 'string') saveOrganiserEvent({ eventId: r.j.id, title: n, adminUrl: path, createdAt: new Date().toISOString() });
+          window.location.assign(path);
+          return;
+        }
         var err = (r.j && r.j.error) || {};
         if (err.field === 'title') self.setState({ creating: false, nameError: err.message || fallback });
         else self.setState({ creating: false, createError: err.message || fallback });

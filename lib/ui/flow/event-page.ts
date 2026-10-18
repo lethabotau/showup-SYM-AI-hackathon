@@ -4,7 +4,10 @@
 import { FRESH_LINK } from '../config';
 import { clone } from '../utils/helpers';
 import { fmtCompact } from '../utils/format';
-import { dateFromIso, isoFromDate } from '../utils/dates';
+import { dateFromIso, isoFromDate, slotFromIso } from '../utils/dates';
+import { fetchResults } from '../services/event-api';
+
+var RESULTS_POLL_MS = 3000;
 import { bestWindow, dayDots, summarise } from '../utils/recommend';
 import { recordMyEvent, saveEventData } from '../services/storage';
 import { dotRowsFrom } from '../utils/dot-rows';
@@ -40,6 +43,75 @@ export class EventPageMixin {
     recordMyEvent({ id: ev.id, name: ev.name, role: 'organising', who: this.state.myName, status: 'Collecting responses' });
     this.setState({ event: ev });
   }
+  organiserToken() {
+    var s = this.state; var ev = s.event;
+    if (!ev || !ev.persisted || s.mode !== 'organiser' || !ev.links || !ev.links.organiserPath) return null;
+    try { return new URL(ev.links.organiserPath, 'http://local').searchParams.get('k'); } catch (e) { return null; }
+  }
+  // Stored events: one chained-timeout loop while the event or Join screen shows. Each restart bumps the
+  // generation, which stops the old loop and makes its late replies ignored. Called after every update.
+  syncResultsPolling() {
+    var s = this.state; var ev = s.event;
+    var key = ev && ev.persisted && (s.screen === 'event' || s.screen === 'join') ? ev.id + '|' + s.mode : null;
+    if (key === this.pollKey) return;
+    this.stopResultsPolling();
+    this.pollKey = key;
+    if (key) this.pollResults(this.pollGen, ev.id);
+  }
+  stopResultsPolling() {
+    this.pollGen = (this.pollGen || 0) + 1;
+    if (this.pollTimer) clearTimeout(this.pollTimer);
+    this.pollTimer = null; this.pollKey = null;
+  }
+  pollResults(gen, eventId) {
+    var self = this;
+    var next = function () {
+      if (gen !== self.pollGen) return;
+      self.pollTimer = setTimeout(function () { self.pollTimer = null; if (gen === self.pollGen) self.pollResults(gen, eventId); }, RESULTS_POLL_MS);
+    };
+    var failed = function () { if (gen !== self.pollGen) return; if (!self.state.resultsError) self.setState({ resultsError: true }); next(); };
+    fetchResults(eventId, this.organiserToken()).then(function (r) {
+      if (gen !== self.pollGen) return;
+      if (!r.ok || !r.body || r.body.eventId !== eventId) { failed(); return; }
+      if (self.state.resultsError || JSON.stringify(r.body) !== JSON.stringify(self.state.results)) self.setState({ results: r.body, resultsError: false });
+      next();
+    }, failed);
+  }
+
+  resultsVals(s) {
+    var self = this; var ev = s.event;
+    var on = !!(ev && ev.persisted) && (s.screen === 'event' || s.screen === 'join');
+    var r = on && s.results && s.results.eventId === ev.id ? s.results : null;
+    var days = r ? r.days : [];
+    var scale = Math.max(1, r ? r.respondedCount : 1);
+    var pct = function (n) { return String(Math.round((n / scale) * 1000) / 10); };
+    var best = r && r.best;
+    var rows = days.map(function (d) {
+      var b = d.best; var info = slotFromIso(d.date);
+      var isBest = !!(best && best.date === d.date);
+      return {
+        key: d.date, isBest: isBest, cls: 'lr-row' + (isBest ? ' is-best' : '') + (b ? '' : ' is-none'),
+        label: info.short + ' · ' + (b ? fmtCompact(b.startMin, b.endMin) : 'No time fits'),
+        counts: b ? b.free + ' free · ' + b.coming + ' coming' + (b.maybe > 0 ? ' · ' + b.maybe + ' maybe' : '') : '',
+        hasBar: !!b, freePct: b ? pct(b.free) : '0', comingPct: b ? pct(b.coming) : '0',
+        aria: b ? info.title + ': ' + b.free + ' free, ' + b.coming + ' coming' : info.title + ': no time fits',
+      };
+    });
+    return {
+      showLiveResults: on,
+      resultsLoading: on && !r && !s.resultsError,
+      resultsFailed: on && !r && !!s.resultsError,
+      retryResults: function () { self.stopResultsPolling(); self.syncResultsPolling(); },
+      resultsEmpty: !!r && r.respondedCount === 0,
+      resultsNoBest: !!r && r.respondedCount > 0 && !best,
+      resultsHasBest: !!best,
+      resultsBestLine: best ? 'Best time: ' + slotFromIso(best.date).short.split(' ')[0] + ' ' + fmtCompact(best.startMin, best.endMin) + ' · ' + best.coming + ' coming' : '',
+      resultsRows: r && r.respondedCount > 0 ? rows : [],
+      showRespondents: !!r && s.mode === 'organiser' && Array.isArray(r.respondents) && r.respondents.length > 0,
+      respondentsLine: r && Array.isArray(r.respondents) ? 'Responded: ' + r.respondents.join(', ') : '',
+    };
+  }
+
   renderValsReminder() { var ev = this.state.event; return "Hey, we're trying to lock in a time for " + ((ev && ev.name) || 'Weekend plans') + '. Add your availability when you get a chance!'; }
 
   eventContext(s) {
@@ -66,11 +138,14 @@ export class EventPageMixin {
       var on = s.activePerson === r.who;
       return { name: r.who, initial: r.who.charAt(0).toUpperCase(), cls: 'av glass-silver' + (on ? ' is-on' : ''), pressed: on ? 'true' : 'false', toggle: function () { self.setState({ activePerson: self.state.activePerson === r.who ? null : r.who }); } };
     }) : [];
-    return {
+    var live = persisted && s.results && s.results.eventId === ev.id ? s.results : null;
+    var legacyCount = orgView && nResp === 0 ? 'No responses yet.' : orgView && nResp <= 1 ? 'Just you so far.' : nResp + (nResp === 1 ? ' response' : ' responses');
+    return Object.assign(this.resultsVals(s), {
       evStatusLabel: orgView && prop ? 'Time proposed (prototype)' : 'Collecting responses',
       evGridCls: 'ev-grid ' + (showResults && orgView ? 'is-full ' : '') + this.screenClsOf(s),
-      countLine: orgView && nResp === 0 ? 'No responses yet.' : orgView && nResp <= 1 ? 'Just you so far.' : nResp + (nResp === 1 ? ' response' : ' responses'),
-      showGuestStatus: guestView, showFresh: orgView && nResp <= 1, showResults: showResults, showOrgSide: orgView && nResp >= 2,
+      countLine: !persisted ? legacyCount : live ? live.respondedCount + (live.respondedCount === 1 ? ' response' : ' responses') : '',
+      showGuestStatus: guestView, guestStatus: persisted && !s.justSaved ? "You've responded." : 'Response saved.',
+      showFresh: orgView && (persisted || nResp <= 1), showResults: showResults, showOrgSide: orgView && !persisted && nResp >= 2,
       isOrgView: orgView, isGuestView: guestView,
       hasBest: !!best, noBest: !best,
       bestDay: best ? best.slot.day : '', bestTime: bw ? fmtCompact(bw.s, bw.e) : '',
@@ -81,7 +156,6 @@ export class EventPageMixin {
       linkMsg: s.linkMsg,
       // Stored events have real links; the seeded previews keep the prototype's sample URL.
       isPersisted: persisted, isPrototype: !persisted,
-      resultsPending: orgView && persisted,
       shareLinkText: persisted ? location.host + links.guestPath : 'showup.example/e/N8R2VQ',
       shareLinkTitle: persisted ? undefined : 'Prototype URL, not a live link',
       copyLink: function () { self.copy(persisted ? location.origin + links.guestPath : FRESH_LINK, self.linkEl, 'linkMsg', 'Link copied.', "Couldn't copy automatically. The link is selected, so copy it from there."); },
@@ -101,6 +175,6 @@ export class EventPageMixin {
       toggleReminder: function () { self.setState({ reminderOpen: !self.state.reminderOpen, remMsg: '' }); },
       copyReminder: function () { self.copy(self.renderValsReminder(), self.remEl, 'remMsg', 'Reminder copied.', "Couldn't copy automatically. The text is selected, so copy it from the box."); },
       setRemEl: function (el) { self.remEl = el; },
-    };
+    });
   }
   }

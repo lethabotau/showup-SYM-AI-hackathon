@@ -37,7 +37,7 @@ export class JoinMixin {
 
   restoreGuest(data) {
     var ev = this.state.event; var name = data.participant.name;
-    var patch = Object.assign(respondFor(ev, 'guest', name), applyOwnResponse(ev.slots, data), { joinName: '', joinError: '', restoring: false, errors: {}, formError: '', dirty: false, confirmSwitch: false, baseline: null });
+    var patch = Object.assign(respondFor(ev, 'guest', name), applyOwnResponse(ev.slots, data), { joinName: '', joinError: '', restoring: false, errors: {}, formError: '', dirty: false, confirmSwitch: false, baseline: null, justSaved: false });
     if (data.responded) { this.go(Object.assign(patch, { screen: 'event', phase: 'saved', editing: false })); return; }
     Object.assign(patch, { screen: 'respond', phase: 'editing', editing: false });
     patch.baseline = this.baselineOf(patch);
@@ -54,7 +54,7 @@ export class JoinMixin {
     var ev = this.state.event;
     clearGuestCredential(ev.id);
     this.go(Object.assign(respondFor(ev, 'guest', ''), {
-      screen: 'join', joinName: '', joinError: '', joining: false, restoring: false, participantId: null, confirmSwitch: false, baseline: null,
+      screen: 'join', joinName: '', joinError: '', joining: false, restoring: false, participantId: null, confirmSwitch: false, baseline: null, justSaved: false,
       errors: {}, formError: '', noneWork: false, phase: 'editing', dirty: false, editing: false, sheet: null, linkMsg: '',
     }));
   }
