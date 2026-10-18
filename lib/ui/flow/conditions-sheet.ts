@@ -72,6 +72,7 @@ export class ConditionsSheetMixin {
   // Stored events: POST /interpret (AI, or the server's offline fallback). If the request itself fails, the same
   // offline fallback runs here. Either way the guest confirms the server-style read-back before anything is saved.
   applyInterpretation(r) {
+    console.log('condition interpreter source:', r.source);
     if (r.status === 'self') { this.patchSheet({ loading: false, selfError: r.message || SELF_MESSAGE, interpreted: false, result: null, lines: [] }); return; }
     if (r.status === 'no_condition') { this.patchSheet({ loading: false, noCondition: true, interpreted: false, result: r, lines: r.lines || [], source: r.source }); return; }
     this.patchSheet({ loading: false, interpreted: r.status === 'ok', noFit: r.status === 'no_fit' ? (r.message || NO_FIT_MESSAGE) : '', result: r, lines: r.lines || [], source: r.source });

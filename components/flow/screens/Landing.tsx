@@ -1,5 +1,7 @@
 // Ported mechanically from Main.dc.html (<sc-if> section). Values and handlers come from the page's
 // renderVals() (see lib/ui), exactly as the template's {{holes}} did.
+import Words from '../../shared/Words';
+
 export default function Landing({ v }: { v: any }) {
   return (
     <>
@@ -13,7 +15,7 @@ export default function Landing({ v }: { v: any }) {
         <div className="col-grid">
           <div className={`col-main ${v.screenCls}`}>
             <div className="l-form">
-              <h1 className="display s-head" tabIndex={-1} ref={v.setHeadingEl}>What are you planning?</h1>
+              <h1 className="display s-head" tabIndex={-1} ref={v.setHeadingEl}><Words text="What are you planning?" /></h1>
               <div className="s-body l-form">
                 <div className="field l-field">
                   <label className="field-label" htmlFor="event-name">Event name</label>

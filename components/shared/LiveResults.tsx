@@ -1,3 +1,5 @@
+import Words from './Words';
+
 // Live results for stored events. Every value comes from GET /api/events/{id}/results via resultsVals().
 // Markup and classes follow the prototype's recommendation block and DotRows (styles/screens/event-flow.css).
 
@@ -32,7 +34,7 @@ function DotRow({ r }: { r: any }) {
 export default function LiveResults({ v }: { v: any }) {
   if (!v.showLiveResults) return null;
   return (
-    <section className="live-results s-body" aria-label="Results" aria-live="polite">
+    <section className="live-results s-body su-stagger" aria-label="Results" aria-live="polite">
       {v.resultsLoading ? <p className="lr-note">Loading results…</p> : null}
       {v.resultsFailed ? (
         <p className="lr-note">
@@ -46,16 +48,16 @@ export default function LiveResults({ v }: { v: any }) {
         <div className="lr-rec">
           <p className="label-red">Best so far</p>
           <p className="rec-time">
-            <span>{v.resultsBestDay}</span>
+            <span><Words text={v.resultsBestDay} /></span>
             <span className="comma">,{' '}</span>
-            <span className="t2">{v.resultsBestTime}</span>
+            <span className="t2"><Words text={v.resultsBestTime} start={1} /></span>
           </p>
           <p className="rec-date">{v.resultsBestDate}</p>
           <p className="comp-h rec-viable">{v.resultsBestCount}</p>
         </div>
       ) : null}
       {v.resultsRows.length ? (
-        <ul className="dotrows lr-rows" aria-label="Days compared">
+        <ul className="dotrows lr-rows su-stagger" aria-label="Days compared">
           {v.resultsRows.map((r: any) => (r.hasBar ? <DotRow key={r.key} r={r} /> : (
             <li key={r.key} className="dr lr-dr is-dim">
               <span className="dr-label">
