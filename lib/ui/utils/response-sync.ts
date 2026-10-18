@@ -17,7 +17,7 @@ export function buildResponseBody(slots, state) {
     var conds = [];
     if (state.will[sl.id] === 'if' && state.conds[sl.id]) {
       (state.conds[sl.id] || []).forEach(function (c) {
-        var row = { type: c.type, source: 'fallback' };
+        var row = { type: c.type, source: c.source === 'llm' ? 'llm' : 'fallback' };
         if (c.type === 'requires' || c.type === 'requires_any') row.people = (c.people || []).map(function (p) { return p.id ? { id: p.id } : { name: p.name }; });
         else if (c.type === 'min_attendees') row.n = c.n;
         else if (c.type === 'time') { if (c.earliest_start != null) row.earliest_start = c.earliest_start; if (c.latest_end != null) row.latest_end = c.latest_end; }
@@ -48,7 +48,7 @@ export function applyOwnResponse(slots, data) {
     will[sl.id] = d.willingness;
     if (d.willingness === 'if' && d.conditions && d.conditions.length) {
       conds[sl.id] = d.conditions.map(function (c) {
-        var row = { type: c.type, readback: c.readback };
+        var row = { type: c.type, readback: c.readback, source: c.source };
         if (c.type === 'requires' || c.type === 'requires_any') row.people = (c.people || []).map(function (p) { return { name: p.name, pending: !!p.pending, id: p.pending ? undefined : p.id }; });
         else if (c.type === 'min_attendees') row.n = c.n;
         else if (c.type === 'time') { if (c.earliest_start != null) row.earliest_start = c.earliest_start; if (c.latest_end != null) row.latest_end = c.latest_end; }

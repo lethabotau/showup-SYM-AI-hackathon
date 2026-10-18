@@ -20,8 +20,24 @@ export default function ConditionsSheet({ v }: { v: any }) {
           ) : null}
           {v.showInterpretBtn ? (
             <>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={v.interpretSheet}>Check this</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={v.interpretSheet} disabled={v.interpretBusy} aria-busy={v.interpretBusy}>{v.interpretLabel}</button>
             </>
+          ) : null}
+          {v.showSourceLabel ? <p className="quiet">{v.sourceLabel}</p> : null}
+          {v.showLines ? (
+            <ul className="cond-lines" role="status">
+              {v.sheetLines.map((line: string, i: number) => <li key={i} className="cond-text">{line}</li>)}
+            </ul>
+          ) : null}
+          {v.showNoCondition ? (
+            <div className="cond-none">
+              <p className="cond-text" role="status">We didn&apos;t find anything that changes how you&apos;re counted.</p>
+              <div className="btn-row">
+                <button type="button" className="btn btn-secondary btn-sm" onClick={v.noConditionYes}>Yes</button>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={v.rephraseSheet}>Rephrase</button>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={v.noConditionTentative}>Count me as tentative</button>
+              </div>
+            </div>
           ) : null}
           {v.showReadback ? (
             <>
@@ -78,6 +94,7 @@ export default function ConditionsSheet({ v }: { v: any }) {
           ) : null}
           <div className="sheet-actions">
             <button type="button" className="text-btn text-btn-muted" onClick={v.closeSheet}>Cancel</button>
+            {v.showRephrase ? <button type="button" className="text-btn" onClick={v.rephraseSheet}>Rephrase</button> : null}
             <button type="button" className="btn btn-primary" onClick={v.confirmSheet} disabled={v.cannotConfirm}>Looks right</button>
           </div>
         </div>

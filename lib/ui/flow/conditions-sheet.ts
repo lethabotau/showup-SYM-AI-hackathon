@@ -2,7 +2,10 @@
 import { cloneConds, sameConds } from '../utils/helpers';
 import { joinList, chipLabel, describe } from '../utils/format';
 import { parseConditions } from '../utils/conditions-parser';
-import { chipsToViews, interpretOffline, readback } from '../../conditions/fallback';
+import { readback } from '../../conditions/fallback';
+import { interpretFallback, MAX_TEXT_CHARS, NO_FIT_MESSAGE, SELF_MESSAGE, TENTATIVE_SUMMARY } from '../../conditions/interpreter';
+import { interpretConditionText } from '../services/event-api';
+import { loadGuestCredential } from '../services/guest-credential';
 
 export class ConditionsSheetMixin {
   groupNames() {
@@ -43,7 +46,35 @@ export class ConditionsSheetMixin {
   patchSheet(p) { this.setState({ sheet: Object.assign({}, this.state.sheet, p) }); }
 
   onSheetText(text) {
-    this.patchSheet({ text: text, interpreted: false, readback: '', selfError: '', chips: [], status: 'empty' });
+    this.interpSeq = (this.interpSeq || 0) + 1;
+    this.patchSheet({ text: text, interpreted: false, readback: '', selfError: '', chips: [], status: 'empty', loading: false, noCondition: false, noFit: '', result: null, lines: [], source: null });
+  }
+
+  rephraseSheet() {
+    this.interpSeq = (this.interpSeq || 0) + 1;
+    this.patchSheet({ interpreted: false, loading: false, noCondition: false, noFit: '', result: null, lines: [], source: null, selfError: '' });
+    if (this.sheetEl) { var ta = this.sheetEl.querySelector('textarea'); if (ta) ta.focus(); }
+  }
+
+  /** "Nothing to check" answers: Yes, or If with a confirmed tentative condition. Never an empty If. */
+  noConditionYes() {
+    var sh = this.state.sheet; if (!sh || this.state.sheetClosing) return;
+    this.dismissSheet({ will: this.withKey('will', sh.slotId, 'yes'), conds: this.withKey('conds', sh.slotId, null), condText: this.withKey('condText', sh.slotId, '') });
+  }
+
+  noConditionTentative() {
+    var sh = this.state.sheet; if (!sh || this.state.sheetClosing) return;
+    var v = { type: 'unresolvable', summary: TENTATIVE_SUMMARY };
+    var row = { type: 'unresolvable', summary: TENTATIVE_SUMMARY, source: (sh.result && sh.result.source) || 'fallback', readback: readback(v) };
+    this.dismissSheet({ will: this.withKey('will', sh.slotId, 'if'), conds: this.withKey('conds', sh.slotId, [row]), condText: this.withKey('condText', sh.slotId, row.readback), applied: this.withKey('applied', sh.slotId, '') });
+  }
+
+  // Stored events: POST /interpret (AI, or the server's offline fallback). If the request itself fails, the same
+  // offline fallback runs here. Either way the guest confirms the server-style read-back before anything is saved.
+  applyInterpretation(r) {
+    if (r.status === 'self') { this.patchSheet({ loading: false, selfError: r.message || SELF_MESSAGE, interpreted: false, result: null, lines: [] }); return; }
+    if (r.status === 'no_condition') { this.patchSheet({ loading: false, noCondition: true, interpreted: false, result: r, lines: r.lines || [], source: r.source }); return; }
+    this.patchSheet({ loading: false, interpreted: r.status === 'ok', noFit: r.status === 'no_fit' ? (r.message || NO_FIT_MESSAGE) : '', result: r, lines: r.lines || [], source: r.source });
   }
 
   interpretSheet() {
@@ -51,11 +82,23 @@ export class ConditionsSheetMixin {
     if (!sh) return;
     var roster = this.groupNames() || [];
     if (sh.offline) {
-      var r = interpretOffline(sh.text, { self: this.state.myName, roster: roster });
-      if (r.status === 'self') { this.patchSheet({ selfError: "A condition can't depend on you coming. If nothing else needs to happen, choose Yes.", interpreted: false }); return; }
-      if (r.status === 'empty' || r.status === 'none') { this.patchSheet({ status: r.status, chips: [], readback: '', interpreted: false }); return; }
-      var views = chipsToViews(r.chips);
-      this.patchSheet({ chips: r.chips, status: r.status, views: views, readback: views.map(readback).join(' '), interpreted: true, selfError: '' });
+      var self = this; var s = this.state; var text = sh.text;
+      if (!text.trim()) { this.patchSheet({ status: 'empty', interpreted: false }); return; }
+      if (Array.from(text).length > MAX_TEXT_CHARS) { this.patchSheet({ selfError: 'Keep it under ' + MAX_TEXT_CHARS + ' characters.', interpreted: false }); return; }
+      var seq = this.interpSeq = (this.interpSeq || 0) + 1;
+      var slot = this.slotById(sh.slotId);
+      var local = function () {
+        return interpretFallback({ day: { date: slot.iso, weekday: slot.day, window_start: '00:00', window_end: '00:00', duration_minutes: 0 }, self_name: s.myName, self_id: '\u0000self', roster: roster.map(function (n) { return { id: '', name: n }; }), text: text });
+      };
+      var cred = s.event && loadGuestCredential(s.event.id);
+      this.patchSheet({ loading: true, interpreted: false, selfError: '', noCondition: false, noFit: '', result: null, lines: [], source: null });
+      if (!cred) { this.applyInterpretation(local()); return; }
+      interpretConditionText(s.event.id, cred, slot.iso, text).then(function (r) {
+        if (seq !== self.interpSeq || !self.state.sheet) return;
+        if (r.ok) { self.applyInterpretation(r.body); return; }
+        if (r.status === 400 && r.message) { self.patchSheet({ loading: false, selfError: r.message }); return; }
+        self.applyInterpretation(local());
+      });
       return;
     }
     var legacy = parseConditions(sh.text, roster);
@@ -78,17 +121,18 @@ export class ConditionsSheetMixin {
     if (!sh || this.state.sheetClosing || !sh.interpreted) return;
     var id = sh.slotId;
     var s = this.state;
-    if (sh.offline && sh.views) {
-      var out = sh.views.map(function (v) {
-        var row = { type: v.type, source: 'fallback', readback: readback(v) };
-        if (v.type === 'requires' || v.type === 'requires_any') row.people = v.people.map(function (p) { return { name: p.name, pending: p.pending }; });
+    if (sh.offline && sh.result) {
+      var src = sh.result.source === 'llm' ? 'llm' : 'fallback';
+      var out = sh.result.conditions.map(function (v) {
+        var row = { type: v.type, source: src, readback: readback(v) };
+        if (v.type === 'requires' || v.type === 'requires_any') row.people = v.people.map(function (p) { return p.id ? { id: p.id, name: p.name, pending: false } : { name: p.name, pending: !!p.pending }; });
         else if (v.type === 'min_attendees') row.n = v.n;
         else if (v.type === 'time') { if (v.earliest_start != null) row.earliest_start = v.earliest_start; if (v.latest_end != null) row.latest_end = v.latest_end; }
         else if (v.type === 'unresolvable') row.summary = v.summary;
         return row;
       });
       if (!out.length) return;
-      this.dismissSheet({ will: this.withKey('will', id, 'if'), conds: this.withKey('conds', id, out), condText: this.withKey('condText', id, sh.readback), applied: this.withKey('applied', id, '') });
+      this.dismissSheet({ will: this.withKey('will', id, 'if'), conds: this.withKey('conds', id, out), condText: this.withKey('condText', id, out.map(function (r) { return r.readback; }).join(' ')), applied: this.withKey('applied', id, '') });
       return;
     }
     var seen = {};
@@ -146,12 +190,21 @@ export class ConditionsSheetMixin {
       setSheetEl: function (el) { self.sheetEl = el; },
       sheetText: sh ? sh.text : '',
       onSheetText: function (e) { self.onSheetText(e.target.value); },
-      showOfflineNote: !!(sh && sh.offline), showInterpretBtn: !!(sh && sh.offline),
+      showOfflineNote: false, showInterpretBtn: !!(sh && sh.offline && !sh.interpreted && !sh.noCondition),
       interpretSheet: function () { self.interpretSheet(); },
-      showReadback: !!(sh && sh.interpreted && sh.readback), sheetReadback: sh ? sh.readback : '',
+      interpretBusy: !!(sh && sh.loading), interpretLabel: sh && sh.loading ? 'Checking…' : 'Check this',
+      showSourceLabel: !!(sh && sh.offline && sh.source && (sh.interpreted || sh.noCondition || sh.noFit)),
+      sourceLabel: sh && sh.source === 'llm' ? 'Interpreted by AI' : 'Interpreted offline (basic)',
+      showLines: !!(sh && sh.offline && sh.lines && sh.lines.length), sheetLines: sh && sh.lines ? sh.lines : [],
+      showNoCondition: !!(sh && sh.offline && sh.noCondition),
+      noConditionYes: function () { self.noConditionYes(); },
+      noConditionTentative: function () { self.noConditionTentative(); },
+      showRephrase: !!(sh && sh.offline && (sh.interpreted || sh.noFit)),
+      rephraseSheet: function () { self.rephraseSheet(); },
+      showReadback: !!(sh && !sh.offline && sh.interpreted && sh.readback), sheetReadback: sh ? sh.readback : '',
       showChips: !!(sh && sh.chips.length && !sh.offline), sheetChips: sheetChips,
-      showQuiet: !!(sh && quietLine && !sh.readback), quietLine: quietLine,
-      cannotConfirm: !sh || !sh.interpreted || (sh.offline ? !sh.readback : self.validChips(sh.chips).length === 0),
+      showQuiet: !!(sh && (sh.noFit || (quietLine && !sh.readback && !sh.loading && !sh.noCondition))), quietLine: sh && sh.noFit ? sh.noFit : quietLine,
+      cannotConfirm: !sh || !sh.interpreted || (sh.offline ? !(sh.result && sh.result.conditions.length) : self.validChips(sh.chips).length === 0),
       confirmSheet: function () { self.confirmSheet(); },
       closeSheet: function () { self.closeSheet(); },
       sheetKey: function (e) { if (e.key === 'Escape') { e.stopPropagation(); self.closeSheet(); } },

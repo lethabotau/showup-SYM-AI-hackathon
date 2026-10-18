@@ -31,6 +31,22 @@ export async function fetchResults(eventId: string, organiserToken?: string | nu
   return { ok: true, body: await res.json() };
 }
 
+export async function interpretConditionText(eventId: string, credential: string, date: string, text: string): Promise<{ ok: true; body: any } | { ok: false; status: number; message?: string }> {
+  try {
+    const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/interpret`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${credential}` },
+      body: JSON.stringify({ date, text }),
+      cache: 'no-store',
+    });
+    const j = await res.json().catch(() => null);
+    if (res.ok && j && Array.isArray(j.conditions)) return { ok: true, body: j };
+    return { ok: false, status: res.status, message: j && j.error && j.error.message };
+  } catch {
+    return { ok: false, status: 0 };
+  }
+}
+
 export async function saveOwnResponse(eventId: string, credential: string, body: unknown): Promise<{ ok: true; body: unknown } | { ok: false; message: string; field?: string }> {
   const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/response`, {
     method: 'PUT',

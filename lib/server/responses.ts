@@ -128,7 +128,7 @@ export interface ValidDay {
   willingness: 'yes' | 'if' | 'no';
   available: Range[];
   favourite: Range[];
-  conditions: { type: string; payload: Record<string, unknown>; readback: string }[];
+  conditions: { type: string; payload: Record<string, unknown>; readback: string; source: 'llm' | 'fallback' }[];
 }
 
 type V<T> = { ok: true; value: T } | { ok: false; error: ValidationError };
@@ -166,7 +166,7 @@ function ranges(v: unknown, field: string, win: DayWindow): V<Range[]> {
 
 function condition(v: unknown, field: string, self: ParticipantRow, people: readonly ParticipantRow[]): V<{ type: string; payload: Record<string, unknown>; view: ConditionView }> {
   if (!isObj(v)) return bad(field, 'That condition is not valid.');
-  if (v.source !== 'fallback') return bad(field, 'Conditions must be confirmed before saving.');
+  if (v.source !== 'fallback' && v.source !== 'llm') return bad(field, 'Conditions must be confirmed before saving.');
   switch (v.type) {
     case 'requires':
     case 'requires_any': {
@@ -248,7 +248,7 @@ export function validateResponse(body: unknown, days: readonly DayWindow[], self
     for (let j = 0; j < rawConds.length; j++) {
       const c = condition(rawConds[j], `${f}.conditions[${j}]`, self, people);
       if ('error' in c) return c;
-      conditions.push({ type: c.value.type, payload: c.value.payload, readback: readback(c.value.view) });
+      conditions.push({ type: c.value.type, payload: c.value.payload, readback: readback(c.value.view), source: (rawConds[j] as { source: 'llm' | 'fallback' }).source });
     }
     out.push({ date: win.date, willingness: w, available: av.value, favourite: fav.value, conditions });
   }
@@ -267,7 +267,7 @@ export interface OwnDay {
 
 export interface OwnResponse { participant: { id: string; name: string }; responded: boolean; days: OwnDay[] }
 
-async function eventPeople(db: Db, eventId: string): Promise<ParticipantRow[]> {
+export async function eventPeople(db: Db, eventId: string): Promise<ParticipantRow[]> {
   const rows = await db.query<{ id: string; display_name: string; normalised_name: string }>(
     'SELECT id, display_name, normalised_name FROM participants WHERE event_id = $1 ORDER BY created_seq',
     [eventId],
@@ -345,7 +345,7 @@ export async function saveResponse(db: Db, eventId: string, me: ParticipantRow, 
     ...d.favourite.map((r) => [id, eventId, d.date, 'favourite', r.s, r.e]),
   ]));
   const cs = multi('conditions', ['participant_id', 'event_id', 'date', 'type', 'payload', 'readback', 'source'], v.value.flatMap((d) =>
-    d.conditions.map((c) => [id, eventId, d.date, c.type, JSON.stringify(c.payload), c.readback, 'fallback'])));
+    d.conditions.map((c) => [id, eventId, d.date, c.type, JSON.stringify(c.payload), c.readback, c.source])));
   for (const s of [will, rs, cs]) if (s) statements.push(s);
   await db.transaction(statements);
   return { status: 'ok', response: await loadOwnResponse(db, eventId, me) };

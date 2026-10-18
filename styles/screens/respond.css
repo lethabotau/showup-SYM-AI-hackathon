@@ -39,6 +39,9 @@
 .will-q{font-size:16px;font-weight:500;letter-spacing:-0.01em}
 .cond-sum{display:flex;flex-direction:column;gap:2px}
 .cond-text{font-size:15px;color:var(--text-primary)}
+.cond-lines{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cond-none{display:flex;flex-direction:column;gap:var(--space-3)}
+.cond-none .btn-row{flex-wrap:wrap}
 .cond-actions{display:flex;flex-wrap:wrap;gap:0 var(--space-5)}
 .r-actions{margin-top:var(--space-7);display:flex;flex-direction:column;gap:var(--space-4)}
 .r-actions .btn-primary{width:100%}

@@ -1,7 +1,8 @@
 // Route handler logic, kept free of Next.js so it can be tested against an isolated database.
 import { isUnavailable, logDbError, type Db } from './db';
 import { authoriseOrganiser, createEvent, getPublicEvent, guestPath, organiserPath } from './events';
-import { authenticateGuest, joinEvent, loadOwnResponse, saveResponse } from './responses';
+import { authenticateGuest, eventPeople, joinEvent, loadOwnResponse, saveResponse } from './responses';
+import { interpretCondition, MAX_TEXT_CHARS, type InterpretationContext, type ModelTransport } from '../conditions/interpreter';
 import { computeResults, type OrganiserResultsDto, type ResultsDto } from './results';
 import { validateCreateEvent } from './validate';
 
@@ -151,6 +152,46 @@ export async function handleGetResults(eventId: string, req: Request, getDb: () 
   } catch (err) {
     return failure('get-results', err);
   }
+}
+
+const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/**
+ * Interprets a guest's condition text for one day. Never persists anything; the guest confirms the result and saves
+ * it through PUT /response. Event context comes from the database, never the client. Text is never logged.
+ */
+export async function handleInterpret(eventId: string, req: Request, getDb: () => Db, getTransport: () => ModelTransport | null): Promise<Response> {
+  const cred = guestCredential(req);
+  if (!cred) return error(401, 'unauthorised', 'Sign in with your guest link first.');
+  const parsed = await readJson(req);
+  if ('res' in parsed) return parsed.res;
+  const body = parsed.body as { date?: unknown; text?: unknown };
+  if (typeof body.text !== 'string' || !body.text.trim()) return error(400, 'invalid_input', 'Enter what it depends on, then check it.', 'text');
+  if ([...body.text].length > MAX_TEXT_CHARS) return error(400, 'invalid_input', `Keep it under ${MAX_TEXT_CHARS} characters.`, 'text');
+  if (typeof body.date !== 'string') return error(400, 'invalid_input', "That day isn't one of this event's days.", 'date');
+  let ctx: InterpretationContext;
+  try {
+    const db = getDb();
+    const auth = await authenticateGuest(db, eventId, cred);
+    if (auth.status !== 'ok') return error(401, 'unauthorised', 'Your guest access is not valid.');
+    const [event, people] = await Promise.all([getPublicEvent(db, eventId), eventPeople(db, eventId)]);
+    const day = event?.days.find((d) => d.date === body.date);
+    if (!event || !day) return error(400, 'invalid_input', "That day isn't one of this event's days.", 'date');
+    const me = auth.participant;
+    ctx = {
+      day: { date: day.date, weekday: WEEKDAYS[new Date(`${day.date}T00:00:00Z`).getUTCDay()]!, window_start: hhmm(day.start), window_end: hhmm(day.end), duration_minutes: event.durationMin },
+      self_name: me.displayName,
+      self_id: me.id,
+      roster: people.filter((p) => p.id !== me.id).map((p) => ({ id: p.id, name: p.displayName })),
+      text: body.text,
+    };
+  } catch (err) {
+    return failure('interpret', err);
+  }
+  const { failure: why, ...result } = await interpretCondition(ctx, getTransport());
+  if (why && why !== 'no_key') console.warn(`interpret: fell back (${why})`);
+  return json(200, result);
 }
 
 export async function handleSaveResponse(eventId: string, req: Request, getDb: () => Db): Promise<Response> {
