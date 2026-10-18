@@ -1,6 +1,6 @@
 // Client calls to stored-event APIs. Credentials stay in guest-credential.ts, never in URLs.
 
-export async function joinStoredEvent(eventId: string, name: string): Promise<{ ok: true; participantId: string; name: string; credential: string } | { ok: false; message: string; field?: string }> {
+export async function joinStoredEvent(eventId: string, name: string): Promise<{ ok: true; participantId: string; name: string; credential: string } | { ok: false; status: number; message: string; field?: string }> {
   const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -9,7 +9,7 @@ export async function joinStoredEvent(eventId: string, name: string): Promise<{ 
   const j = await res.json().catch(() => null);
   if (res.ok && j && j.credential) return { ok: true, participantId: j.participantId, name: j.name, credential: j.credential };
   const err = j && j.error;
-  return { ok: false, message: (err && err.message) || "We couldn't join this event.", field: err && err.field };
+  return { ok: false, status: res.status, message: (err && err.message) || "We couldn't join this event.", field: err && err.field };
 }
 
 export async function fetchOwnResponse(eventId: string, credential: string): Promise<{ ok: true; body: unknown } | { ok: false; status: number }> {

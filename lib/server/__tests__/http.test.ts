@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DbUnavailableError, type Db } from '../db';
 import { hashToken } from '../credentials';
 import { authoriseOrganiser } from '../events';
-import { checkHealth, handleCreateEvent, handleGetEvent, MAX_BODY_BYTES } from '../http';
+import { checkHealth, handleCreateEvent, handleGetEvent, handleJoinEvent, MAX_BODY_BYTES } from '../http';
 import { testDb, type TestDb } from './pglite';
 
 const now = new Date('2030-01-01T00:00:00Z');
@@ -104,5 +104,18 @@ describe('GET /api/events/:id', () => {
   it('404s for unknown and malformed ids', async () => {
     expect((await handleGetEvent('AAAAAAAAAAAAAAAA', getDb)).status).toBe(404);
     expect((await handleGetEvent('../admin', getDb)).status).toBe(404);
+  });
+});
+
+describe('POST /api/events/:id/join', () => {
+  it('409s for a name already taken, ignoring case and surrounding spaces', async () => {
+    const { id } = await (await handleCreateEvent(post(body), getDb, now)).json();
+    const join = (name: string) => handleJoinEvent(id, new Request(`http://localhost/api/events/${id}/join`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name }) }), getDb);
+    expect((await join('sam')).status).toBe(201);
+    const dup = await join('Sam ');
+    expect(dup.status).toBe(409);
+    const j = await dup.json();
+    expect(j.error.code).toBe('name_taken');
+    expect(JSON.stringify(j)).not.toMatch(/credential/);
   });
 });

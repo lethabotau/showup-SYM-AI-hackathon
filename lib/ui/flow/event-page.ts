@@ -48,8 +48,10 @@ export class EventPageMixin {
     var orgView = isEvent && s.mode === 'organiser';
     var guestView = isEvent && s.mode === 'guest';
     var nResp = ev ? (ev.responses || []).length : 0;
-    var sum = isEvent ? summarise(ev) : { days: [], best: null };
-    var showResults = isEvent && (guestView || nResp >= 2);
+    // Stored events carry names only, not answers; the legacy summary needs answers and would invent results.
+    var legacy = isEvent && !ev.persisted;
+    var sum = legacy ? summarise(ev) : { days: [], best: null };
+    var showResults = legacy && (guestView || nResp >= 2);
     var best = sum.best; var bw = best ? bestWindow(ev, best.slot.id, best.viable) : null;
     var prop = ev && ev.proposal;
     var propSlot = prop ? ev.slots.filter(function (x) { return x.id === prop.slotId; })[0] : null;
@@ -79,6 +81,7 @@ export class EventPageMixin {
       linkMsg: s.linkMsg,
       // Stored events have real links; the seeded previews keep the prototype's sample URL.
       isPersisted: persisted, isPrototype: !persisted,
+      resultsPending: orgView && persisted,
       shareLinkText: persisted ? location.host + links.guestPath : 'showup.example/e/N8R2VQ',
       shareLinkTitle: persisted ? undefined : 'Prototype URL, not a live link',
       copyLink: function () { self.copy(persisted ? location.origin + links.guestPath : FRESH_LINK, self.linkEl, 'linkMsg', 'Link copied.', "Couldn't copy automatically. The link is selected, so copy it from there."); },

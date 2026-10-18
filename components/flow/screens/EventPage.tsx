@@ -27,6 +27,19 @@ export default function EventPage({ v }: { v: any }) {
               <p className="ev-status s-head">You're in. We'll let you know when a time is proposed.</p>
             </>
           ) : null}
+          {v.showEditLink ? (
+            <section className="glass f-invite s-body" aria-labelledby="edit-link-h">
+              <div className="f-invite-text">
+                <h2 id="edit-link-h" className="comp-h">Your private edit link</h2>
+                <p className="f-link" ref={v.setEditLinkEl}>{v.editLinkText}</p>
+                <p className="small">Use this to edit your response on another device. Don't share it.</p>
+                <div className="btn-row">
+                  <button type="button" className="btn btn-secondary" onClick={v.copyEditLink}>Copy link</button>
+                  <p className="small copy-msg" role="status" aria-live="polite">{v.editLinkMsg}</p>
+                </div>
+              </div>
+            </section>
+          ) : null}
           {v.showFresh ? (
             <>
               <section className="glass f-invite s-body" aria-label="Invite link">
@@ -44,9 +57,10 @@ export default function EventPage({ v }: { v: any }) {
                 </svg>
 ) : null}
               </section>
-              <p className="f-wait s-body">The best time shows up once people respond.</p>
+              <p className="f-wait s-body">{v.isPrototype ? 'The best time shows up once people respond.' : 'Results will appear here.'}</p>
             </>
           ) : null}
+          {v.resultsPending && !v.showFresh ? <p className="f-sub s-body">Results will appear here.</p> : null}
           {v.showResults ? (
             <>
               <section className="ev-best s-body" aria-labelledby="best-label">
@@ -104,7 +118,7 @@ export default function EventPage({ v }: { v: any }) {
                 </section>
                 <section className="ev-actions" aria-label="Organiser actions">
                   <div className="btn-row">
-                    <button type="button" className="btn btn-primary" onClick={v.openPropose}>{v.proposeLabel}</button>
+                    {v.isPrototype ? <button type="button" className="btn btn-primary" onClick={v.openPropose}>{v.proposeLabel}</button> : null}
                     <button type="button" className="btn btn-secondary" onClick={v.toggleReminder} aria-expanded={v.reminderExpanded}>Draft reminder</button>
                   </div>
                   {v.hasProposal ? (
@@ -123,6 +137,7 @@ export default function EventPage({ v }: { v: any }) {
           ) : null}
           <nav className="ev-links s-body" aria-label="More">
             {v.isPrototype || v.isGuestView ? <button type="button" className="text-btn" onClick={v.editMyResponse}>Edit my response</button> : null}
+            {v.isGuestView && v.canSwitchGuest ? <button type="button" className="text-btn text-btn-muted" onClick={v.switchGuest}>{v.switchLabel}</button> : null}
             {v.canCopyOrgLink ? <button type="button" className="text-btn" onClick={v.copyOrgLink}>Copy organiser link</button> : null}
             {v.isOrgView ? (
               <>

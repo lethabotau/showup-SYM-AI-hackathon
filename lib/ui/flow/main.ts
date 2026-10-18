@@ -6,6 +6,7 @@ import { mix } from '../registry';
 import { FAMILY, DEFAULT_START, STORE_KEY, DOTS_KEY } from '../config';
 import { baseState, seed, respondFor } from '../state';
 import { loadMyEvents } from '../services/storage';
+import { consumeEditFragment } from '../services/guest-credential';
 import { AppMixin } from './app';
 import { LandingMixin } from './landing';
 import { CreateMixin } from './create';
@@ -40,6 +41,8 @@ export class Component extends DCLogic {
     // Neither prop is passed by / or /preview/[startAt], so those behave exactly as before.
     if (props && props.event) Object.assign(st, respondFor(props.event, st.mode, st.myName));
     if (props && props.initialState) Object.assign(st, props.initialState);
+    // [port] A private edit link's #k= leaves the address bar before the first render.
+    this.editCredential = props && props.event && props.event.persisted && st.screen === 'join' ? consumeEditFragment() : null;
     var discsSeen = false;
     try { discsSeen = window.sessionStorage.getItem(DOTS_KEY) === '1'; } catch (e) {}
     st.discsGrown = discsSeen || this.reduced();

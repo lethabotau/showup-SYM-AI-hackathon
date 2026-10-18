@@ -201,6 +201,20 @@ export default function Respond({ v }: { v: any }) {
                   </div>
                 </>
               ) : null}
+              {v.canSwitchGuest && v.confirmSwitch ? (
+                <div className="none-note">
+                  <p role="alert">Discard your unsaved changes?</p>
+                  <div className="btn-row">
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={v.cancelSwitch}>Cancel</button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={v.discardSwitch}>Discard</button>
+                  </div>
+                </div>
+              ) : null}
+              {v.canSwitchGuest && !v.confirmSwitch ? (
+                <div>
+                  <button type="button" className="text-btn text-btn-muted" onClick={v.switchGuest}>{v.switchLabel}</button>
+                </div>
+              ) : null}
             </div>
           </section>
           <aside className="r-rail s-body" aria-label="How this works">
