@@ -94,6 +94,8 @@ export class EventPageMixin {
         label: info.short + ' · ' + (b ? fmtCompact(b.startMin, b.endMin) : 'No time fits'),
         counts: b ? b.free + ' free · ' + b.coming + ' coming' + (b.maybe > 0 ? ' · ' + b.maybe + ' maybe' : '') : '',
         hasBar: !!b, freePct: b ? pct(b.free) : '0', comingPct: b ? pct(b.coming) : '0',
+        free: b ? b.free : 0, coming: b ? b.coming : 0, maybe: b ? b.maybe : 0,
+        day: info.title, time: b ? fmtCompact(b.startMin, b.endMin) : 'No time fits',
         aria: b ? info.title + ': ' + b.free + ' free, ' + b.coming + ' coming' : info.title + ': no time fits',
       };
     });
@@ -106,6 +108,10 @@ export class EventPageMixin {
       resultsNoBest: !!r && r.respondedCount > 0 && !best,
       resultsHasBest: !!best,
       resultsBestLine: best ? 'Best time: ' + slotFromIso(best.date).short.split(' ')[0] + ' ' + fmtCompact(best.startMin, best.endMin) + ' · ' + best.coming + ' coming' : '',
+      resultsBestDay: best ? slotFromIso(best.date).day : '',
+      resultsBestTime: best ? fmtCompact(best.startMin, best.endMin) : '',
+      resultsBestDate: best ? slotFromIso(best.date).short : '',
+      resultsBestCount: best ? best.coming + (best.coming === 1 ? ' person could make this work.' : ' people could make this work.') : '',
       resultsRows: r && r.respondedCount > 0 ? rows : [],
       showRespondents: !!r && s.mode === 'organiser' && Array.isArray(r.respondents) && r.respondents.length > 0,
       respondentsLine: r && Array.isArray(r.respondents) ? 'Responded: ' + r.respondents.join(', ') : '',
