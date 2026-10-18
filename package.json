@@ -12,14 +12,19 @@
     "visual": "node scripts/visual-diff.mjs",
     "test": "vitest run",
     "test:engine": "tsc -p lib/engine && vitest run lib/engine",
+    "test:server": "tsc -p lib/server && vitest run lib/server",
+    "db:setup": "tsx scripts/db-setup.ts",
     "bench:engine": "tsx scripts/bench-engine.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "next": "16.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
+    "@next/env": "^16.4.2",
     "@types/node": "20.19.43",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

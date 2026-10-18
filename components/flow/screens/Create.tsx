@@ -97,12 +97,13 @@ export default function Create({ v }: { v: any }) {
                 ) : null}
               </div>
               <div className="c-actions">
-                <button type="button" className="btn btn-primary" onClick={v.createEvent} disabled={v.cannotCreate}>Create event</button>
+                <button type="button" className="btn btn-primary" onClick={v.createEvent} disabled={v.createDisabled}>{v.createLabel}</button>
                 {v.cannotCreate ? (
                   <>
                     <p className="small">{v.createHint}</p>
                   </>
                 ) : null}
+                {v.hasCreateError ? <p className="field-error" role="alert">{v.createError}</p> : null}
               </div>
             </div>
           </div>

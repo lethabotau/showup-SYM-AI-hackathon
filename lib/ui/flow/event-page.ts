@@ -59,6 +59,7 @@ export class EventPageMixin {
   eventVals(s, x) {
     var self = this;
     var ev = x.ev, isEvent = x.isEvent, orgView = x.orgView, guestView = x.guestView, nResp = x.nResp, sum = x.sum, showResults = x.showResults, best = x.best, bw = x.bw, prop = x.prop, propSlot = x.propSlot;
+    var persisted = !!(ev && ev.persisted); var links = (ev && ev.links) || {};
     var people = isEvent ? (ev.responses || []).map(function (r) {
       var on = s.activePerson === r.who;
       return { name: r.who, initial: r.who.charAt(0).toUpperCase(), cls: 'av glass-silver' + (on ? ' is-on' : ''), pressed: on ? 'true' : 'false', toggle: function () { self.setState({ activePerson: self.state.activePerson === r.who ? null : r.who }); } };
@@ -66,7 +67,7 @@ export class EventPageMixin {
     return {
       evStatusLabel: orgView && prop ? 'Time proposed (prototype)' : 'Collecting responses',
       evGridCls: 'ev-grid ' + (showResults && orgView ? 'is-full ' : '') + this.screenClsOf(s),
-      countLine: orgView && nResp <= 1 ? 'Just you so far.' : nResp + (nResp === 1 ? ' response' : ' responses'),
+      countLine: orgView && nResp === 0 ? 'No responses yet.' : orgView && nResp <= 1 ? 'Just you so far.' : nResp + (nResp === 1 ? ' response' : ' responses'),
       showGuestStatus: guestView, showFresh: orgView && nResp <= 1, showResults: showResults, showOrgSide: orgView && nResp >= 2,
       isOrgView: orgView, isGuestView: guestView,
       hasBest: !!best, noBest: !best,
@@ -76,7 +77,13 @@ export class EventPageMixin {
       dotRows: isEvent ? dotRowsFrom(sum.days.map(function (d) { return dayDots(ev, d); }), best ? best.slot.id : null, s.discsGrown, s.dotsSettled) : [],
       people: people,
       linkMsg: s.linkMsg,
-      copyLink: function () { self.copy(FRESH_LINK, self.linkEl, 'linkMsg', 'Link copied.', "Couldn't copy automatically. The link is selected, so copy it from there."); },
+      // Stored events have real links; the seeded previews keep the prototype's sample URL.
+      isPersisted: persisted, isPrototype: !persisted,
+      shareLinkText: persisted ? location.host + links.guestPath : 'showup.example/e/N8R2VQ',
+      shareLinkTitle: persisted ? undefined : 'Prototype URL, not a live link',
+      copyLink: function () { self.copy(persisted ? location.origin + links.guestPath : FRESH_LINK, self.linkEl, 'linkMsg', 'Link copied.', "Couldn't copy automatically. The link is selected, so copy it from there."); },
+      canCopyOrgLink: orgView && persisted && !!links.organiserPath,
+      copyOrgLink: function () { self.copy(location.origin + links.organiserPath, null, 'linkMsg', 'Organiser link copied. Keep it private.', "Couldn't copy automatically. Your organiser link is this page's address."); },
       setLinkEl: function (el) { self.linkEl = el; },
       editMyResponse: function () { self.editMyResponse(); },
       previewGuest: function () { self.previewGuest(); },

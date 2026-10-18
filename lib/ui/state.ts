@@ -1,14 +1,14 @@
 // @ts-nocheck
 // Ported verbatim from archive/showup-standalone/js/state.js. Only the export/import lines were added
 // (the original files shared globals through classic <script> tags). Types come later.
-import { TODAY } from './config';
 import { SAMPLE_SLOTS, SAMPLE_WINDOW, ORG_RESP, GUEST_RESP, demoEvent } from './data/fixtures';
 import { clone, emptyMaps } from './utils/helpers';
+import { todayIso } from './utils/dates';
 import { loadMyEvents } from './services/storage';
 export function baseState() {
   return {
     screen: 'landing', mode: 'organiser', name: '', nameError: '',
-    orgName: '', pickDays: [], calMonth: TODAY.slice(0, 7), from: 1020, until: 1440, moreOpen: false, note: '',
+    orgName: '', pickDays: [], calMonth: todayIso().slice(0, 7), from: 1020, until: 1440, moreOpen: false, note: '',
     event: null, myName: '', editing: false, joinName: '', joinError: '',
     slots: [], win: { s: 1020, e: 1440 },
     avail: {}, ranges: {}, openWheel: {}, will: {}, conds: {}, condText: {}, applied: {},

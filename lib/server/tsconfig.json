@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noEmit": true,
+    "incremental": false,
+    "plugins": []
+  },
+  "include": ["./**/*.ts", "../../app/api/**/*.ts", "../../scripts/db-setup.ts", "../ui/utils/persisted-event.ts"],
+  "exclude": []
+}

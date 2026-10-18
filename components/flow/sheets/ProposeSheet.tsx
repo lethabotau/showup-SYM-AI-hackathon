@@ -24,7 +24,7 @@ export default function ProposeSheet({ v }: { v: any }) {
           </div>
           <div className="field">
             <label className="field-label" htmlFor="p-deadline">Reply by</label>
-            <input id="p-deadline" className="input-line" type="date" min="2026-10-17" max={v.propMax} value={v.propDeadline} onChange={v.setPropDeadline} />
+            <input id="p-deadline" className="input-line" type="date" min={v.propMin} max={v.propMax} value={v.propDeadline} onChange={v.setPropDeadline} />
           </div>
           <div className="field">
             <label className="field-label" htmlFor="p-min">Minimum attendance</label>

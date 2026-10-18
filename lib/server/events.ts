@@ -1,0 +1,102 @@
+// Event persistence. Public reads return only what any guest may see; credential hashes never leave this module.
+import type { Db, Statement } from './db';
+import { hashToken, ID_PATTERN, newId, newToken, tokenMatches } from './credentials';
+import type { CreateEventInput } from './validate';
+
+export interface PublicEventDay { date: string; start: number; end: number }
+
+/** Everything a guest may see about an event. */
+export interface PublicEvent {
+  id: string;
+  title: string;
+  organiserName: string;
+  durationMin: number;
+  timezone: string;
+  /** In creation order (which is date order). */
+  days: PublicEventDay[];
+}
+
+export function guestPath(id: string): string {
+  return `/e/${encodeURIComponent(id)}`;
+}
+
+export function organiserPath(id: string, token: string): string {
+  return `/e/${encodeURIComponent(id)}/admin?k=${encodeURIComponent(token)}`;
+}
+
+/** Inserts the event and all its days atomically. The raw token is returned once and never stored. */
+export async function createEvent(db: Db, input: CreateEventInput): Promise<{ id: string; token: string }> {
+  const id = newId();
+  const token = newToken();
+  const values: string[] = [];
+  const params: unknown[] = [id];
+  input.days.forEach((d, i) => {
+    const p = params.length;
+    values.push(`($1, $${p + 1}::date, $${p + 2}, $${p + 3}, $${p + 4})`);
+    params.push(d.date, i, d.start, d.end);
+  });
+  const statements: Statement[] = [
+    {
+      text: `INSERT INTO events (id, title, organiser_name, duration_min, timezone, organiser_token_hash)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+      params: [id, input.title, input.organiserName, input.durationMin, input.timezone, hashToken(token)],
+    },
+    { text: `INSERT INTO event_days (event_id, date, position, win_start, win_end) VALUES ${values.join(', ')}`, params },
+  ];
+  await db.transaction(statements);
+  return { id, token };
+}
+
+const EVENT_SELECT = `
+  SELECT e.id, e.title, e.organiser_name, e.duration_min, e.timezone, e.organiser_token_hash,
+         coalesce((SELECT json_agg(json_build_object('date', to_char(d.date, 'YYYY-MM-DD'), 'start', d.win_start, 'end', d.win_end)
+                                   ORDER BY d.position)
+                     FROM event_days d WHERE d.event_id = e.id), '[]'::json) AS days
+    FROM events e WHERE e.id = $1`;
+
+interface EventRow {
+  id: string;
+  title: string;
+  organiser_name: string;
+  duration_min: number;
+  timezone: string;
+  organiser_token_hash: string;
+  days: PublicEventDay[] | string;
+  [key: string]: unknown;
+}
+
+async function loadEvent(db: Db, id: string): Promise<{ event: PublicEvent; tokenHash: string } | null> {
+  if (!ID_PATTERN.test(id)) return null;
+  const rows = await db.query<EventRow>(EVENT_SELECT, [id]);
+  const r = rows[0];
+  if (!r) return null;
+  const days = (typeof r.days === 'string' ? JSON.parse(r.days) : r.days) as PublicEventDay[];
+  return {
+    event: {
+      id: r.id,
+      title: r.title,
+      organiserName: r.organiser_name,
+      durationMin: Number(r.duration_min),
+      timezone: r.timezone,
+      days: days.map((d) => ({ date: d.date, start: Number(d.start), end: Number(d.end) })),
+    },
+    tokenHash: r.organiser_token_hash,
+  };
+}
+
+export async function getPublicEvent(db: Db, id: string): Promise<PublicEvent | null> {
+  return (await loadEvent(db, id))?.event ?? null;
+}
+
+export type OrganiserAccess =
+  | { status: 'ok'; event: PublicEvent }
+  | { status: 'not_found' }
+  | { status: 'forbidden' };
+
+/** Server-side gate for every organiser-only read or action. */
+export async function authoriseOrganiser(db: Db, id: string, token: unknown): Promise<OrganiserAccess> {
+  const found = await loadEvent(db, id);
+  if (!found) return { status: 'not_found' };
+  if (!tokenMatches(token, found.tokenHash)) return { status: 'forbidden' };
+  return { status: 'ok', event: found.event };
+}

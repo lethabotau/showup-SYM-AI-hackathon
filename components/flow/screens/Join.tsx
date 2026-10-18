@@ -15,6 +15,7 @@ export default function Join({ v }: { v: any }) {
           <div className={`col-main ${v.screenCls}`}>
             <h1 className="display vt-title" tabIndex={-1} ref={v.setHeadingEl}>{v.eventName}</h1>
             <p className="j-org s-head">Organised by {v.organiser}</p>
+            {v.hasEventDetails ? <p className="j-org s-head">{v.eventDetails}</p> : null}
             <div className="j-form s-body">
               <div className="field">
                 <label className="field-label" htmlFor="j-name">Your name</label>

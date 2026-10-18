@@ -1,8 +1,8 @@
 // @ts-nocheck
 // Ported verbatim from archive/showup-standalone/js/components/propose-sheet.js. Only the export/import lines were added
 // (the original files shared globals through classic <script> tags). Types come later.
-import { TODAY } from '../config';
 import { clone } from '../utils/helpers';
+import { todayIso } from '../utils/dates';
 import { summarise } from '../utils/recommend';
 import { recordMyEvent, saveEventData } from '../services/storage';
 /* Propose-a-time sheet (in the flow) */
@@ -10,7 +10,8 @@ export class ProposeSheetMixin {
   openPropose() {
     var ev = this.state.event; var sum = summarise(ev);
     var first = (sum.best || sum.days[0]).slot;
-    var def = ev.proposal ? clone(ev.proposal) : { slotId: first.id, deadline: this.dayBefore(first.iso) < TODAY ? TODAY : this.dayBefore(first.iso), min: '2' };
+    var today = todayIso();
+    var def = ev.proposal ? clone(ev.proposal) : { slotId: first.id, deadline: this.dayBefore(first.iso) < today ? today : this.dayBefore(first.iso), min: '2' };
     this.setState({ proposeOpen: true, proposeClosing: false, propForm: def, propError: '' });
   }
   closePropose(extra) {
@@ -24,7 +25,7 @@ export class ProposeSheetMixin {
     var f = this.state.propForm; var ev = clone(this.state.event);
     var sl = ev.slots.filter(function (x) { return x.id === f.slotId; })[0];
     var max = this.dayBefore(sl.iso);
-    if (!f.deadline || f.deadline < TODAY || f.deadline > max) { this.setState({ propError: 'Choose a reply-by date between today and the day before the event.' }); return; }
+    if (!f.deadline || f.deadline < todayIso() || f.deadline > max) { this.setState({ propError: 'Choose a reply-by date between today and the day before the event.' }); return; }
     var n = parseInt(f.min, 10);
     if (isNaN(n) || n < 2 || String(n) !== String(f.min).trim()) { this.setState({ propError: 'Choose a minimum of at least 2 people.' }); return; }
     ev.proposal = { slotId: f.slotId, deadline: f.deadline, min: String(n) };
@@ -45,7 +46,7 @@ export class ProposeSheetMixin {
       propKey: function (e) { if (e.key === 'Escape') { e.stopPropagation(); self.closePropose(); } },
       propOptions: ev ? sum.days.map(function (d) { return { id: d.slot.id, label: d.slot.title + (best && best.slot.id === d.slot.id ? ' (best so far)' : '') }; }) : [],
       propTime: pf.slotId || '', propDeadline: pf.deadline || '', propMin: pf.min || '2',
-      propMax: pfSlot ? this.dayBefore(pfSlot.iso) : '',
+      propMin: todayIso(), propMax: pfSlot ? this.dayBefore(pfSlot.iso) : '',
       setPropTime: function (e) { self.setProp({ slotId: e.target.value }); },
       setPropDeadline: function (e) { self.setProp({ deadline: e.target.value }); },
       setPropMin: function (e) { self.setProp({ min: e.target.value }); },

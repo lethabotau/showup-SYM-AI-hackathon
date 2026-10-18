@@ -4,6 +4,7 @@
 import { FAMILY, STORE_KEY, DOTS_KEY } from '../config';
 import { loadMyEvents, recordMyEvent } from '../services/storage';
 import { baseState } from '../state';
+import { eventDetails } from '../utils/persisted-event';
 /* App shell: state, lifecycle, screen changes, render values */
 export class AppMixin {
   reduced() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
@@ -70,6 +71,7 @@ export class AppMixin {
       goHome: function () { self.goHome(); },
       eventName: (ev && ev.name) || s.name || 'Your event',
       organiser: ev ? ev.organiser : '',
+      hasEventDetails: !!(ev && ev.persisted), eventDetails: ev && ev.persisted ? eventDetails(ev) : '',
     };
   }
 

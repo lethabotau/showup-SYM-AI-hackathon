@@ -8,6 +8,8 @@ export class JoinMixin {
     var s = this.state;
     var n = (s.joinName || '').trim();
     if (!n) { this.setState({ joinError: 'Add your name to continue.' }); return; }
+    // Joining a stored event needs the participant API (B3); until then, say so rather than save locally.
+    if (s.event && s.event.persisted) { this.setState({ joinError: "Responses for this event aren't open yet." }); return; }
     var taken = (s.event.responses || []).some(function (r) { return r.who.toLowerCase() === n.toLowerCase(); });
     if (taken) { this.setState({ joinError: 'Someone with that name has already responded. Try adding an initial.' }); return; }
     this.go(Object.assign(respondFor(s.event, 'guest', n), { screen: 'respond', joinError: '', errors: {}, formError: '', noneWork: false, phase: 'editing', dirty: false, editing: false }));
