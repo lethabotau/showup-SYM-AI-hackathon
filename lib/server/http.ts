@@ -1,7 +1,8 @@
 // Route handler logic, kept free of Next.js so it can be tested against an isolated database.
 import { isUnavailable, logDbError, type Db } from './db';
-import { createEvent, getPublicEvent, guestPath, organiserPath } from './events';
+import { authoriseOrganiser, createEvent, getPublicEvent, guestPath, organiserPath } from './events';
 import { authenticateGuest, joinEvent, loadOwnResponse, saveResponse } from './responses';
+import { computeResults, type OrganiserResultsDto, type ResultsDto } from './results';
 import { validateCreateEvent } from './validate';
 
 export const MAX_BODY_BYTES = 16_384;
@@ -123,6 +124,32 @@ export async function handleGetOwnResponse(eventId: string, req: Request, getDb:
     return json(200, response);
   } catch (err) {
     return failure('get-response', err);
+  }
+}
+
+/**
+ * Public aggregates for anyone with the event link; respondent names only for the organiser. A credential that is
+ * neither this event's organiser token nor one of its guests is refused rather than downgraded.
+ */
+export async function handleGetResults(eventId: string, req: Request, getDb: () => Db): Promise<Response> {
+  const header = req.headers.get('authorization');
+  const cred = guestCredential(req);
+  try {
+    const db = getDb();
+    const access = await authoriseOrganiser(db, eventId, cred);
+    if (access.status === 'not_found') return json(404, { error: 'not_found' });
+    if (header !== null && access.status !== 'ok') {
+      if (!cred || (await authenticateGuest(db, eventId, cred)).status !== 'ok') return json(403, { error: 'forbidden' });
+    }
+    const event = access.status === 'ok' ? access.event : await getPublicEvent(db, eventId);
+    if (!event) return json(404, { error: 'not_found' });
+    const { results, respondents } = await computeResults(db, event);
+    const body: ResultsDto | OrganiserResultsDto = access.status === 'ok'
+      ? { eventId: results.eventId, respondedCount: results.respondedCount, best: results.best, days: results.days, slots: results.slots, respondents }
+      : { eventId: results.eventId, respondedCount: results.respondedCount, best: results.best, days: results.days, slots: results.slots };
+    return json(200, body);
+  } catch (err) {
+    return failure('get-results', err);
   }
 }
 

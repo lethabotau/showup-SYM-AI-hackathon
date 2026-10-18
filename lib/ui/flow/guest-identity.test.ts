@@ -70,8 +70,9 @@ describe('private edit link', () => {
     const c = mount();
     expect(store.get('showup-guest-' + EVT)).toBe(JO); // not stored before verification
     await settle();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0];
+    const ownCalls = fetchMock.mock.calls.filter((c) => String(c[0]).endsWith('/response'));
+    expect(ownCalls).toHaveLength(1);
+    const [url, init] = ownCalls[0];
     expect(url).toBe(`/api/events/${EVT}/response`);
     expect(url).not.toContain('samsecret');
     expect((init as RequestInit).headers).toEqual({ Authorization: 'Bearer ' + SAM });
@@ -187,8 +188,8 @@ describe('stored-event event screen', () => {
     const c = mount();
     c.setState({ screen: 'event', mode: 'organiser' });
     const org = c.renderVals();
-    expect(org).toMatchObject({ showResults: false, hasBest: false, resultsPending: true, dotRows: [] });
+    expect(org).toMatchObject({ showResults: false, hasBest: false, showLiveResults: true, dotRows: [] });
     c.setState({ mode: 'guest' });
-    expect(c.renderVals()).toMatchObject({ showResults: false, showGuestStatus: true, resultsPending: false });
+    expect(c.renderVals()).toMatchObject({ showResults: false, showGuestStatus: true, showLiveResults: true });
   });
 });

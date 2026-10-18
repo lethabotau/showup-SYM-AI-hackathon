@@ -1,7 +1,5 @@
 // Ported mechanically from Main.dc.html (<sc-if> section). Values and handlers come from the page's
 // renderVals() (see lib/ui), exactly as the template's {{holes}} did.
-import { Fragment } from 'react';
-
 export default function Landing({ v }: { v: any }) {
   return (
     <>
@@ -39,29 +37,12 @@ export default function Landing({ v }: { v: any }) {
                 <section className="my-events s-body" aria-labelledby="my-h">
                   <h2 id="my-h" className="label">Your events</h2>
                   <div className="my-list">
-                    {(v.myEvents || []).map((ev: any, $index: number) => (
-                      <Fragment key={$index}>
-                        {ev.isLink ? (
-                          <>
-                            {/* Plain <a>, not next/link: a full page load keeps Main's and Event's CSS apart. */}
-                            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                            <a className="my-row glass-control" href="/example" onClick={v.saveForReturn}>
-                              <span className="my-name">{ev.name}</span>
-                              <span className="my-role">{ev.roleLabel}</span>
-                              <span className="my-status">{ev.status}</span>
-                            </a>
-                          </>
-                        ) : null}
-                        {ev.isButton ? (
-                          <>
-                            <button type="button" className="my-row glass-control" onClick={ev.open}>
-                              <span className="my-name">{ev.name}</span>
-                              <span className="my-role">{ev.roleLabel}</span>
-                              <span className="my-status">{ev.status}</span>
-                            </button>
-                          </>
-                        ) : null}
-                      </Fragment>
+                    {(v.myEvents || []).map((ev: any) => (
+                      <a key={ev.key} className="my-row glass-control" href={ev.href}>
+                        <span className="my-name">{ev.name}</span>
+                        <span className="my-role">{ev.roleLabel}</span>
+                        <span className="my-status">{ev.status}</span>
+                      </a>
                     ))}
                   </div>
                 </section>

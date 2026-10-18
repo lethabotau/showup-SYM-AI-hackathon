@@ -1,6 +1,8 @@
 // Ported mechanically from Main.dc.html (<sc-if> section). Values and handlers come from the page's
 // renderVals() (see lib/ui), exactly as the template's {{holes}} did.
 
+import LiveResults from '../../shared/LiveResults';
+
 export default function Join({ v }: { v: any }) {
   return (
     <>
@@ -30,6 +32,7 @@ export default function Join({ v }: { v: any }) {
                 <button type="button" className="btn btn-primary" onClick={v.joinContinue} disabled={v.joinDisabled} aria-busy={v.joinDisabled ? 'true' : undefined}>{v.joinLabel}</button>
               </div>
             </div>
+            <LiveResults v={v} />
           </div>
         </div>
       </main>

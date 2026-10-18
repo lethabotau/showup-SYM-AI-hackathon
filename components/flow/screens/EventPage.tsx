@@ -3,6 +3,7 @@
 import ProposalNotice from '../../shared/ProposalNotice';
 import ReminderPanel from '../../shared/ReminderPanel';
 import DotRows from '../../shared/DotRows';
+import LiveResults from '../../shared/LiveResults';
 import { Fragment } from 'react';
 
 export default function EventPage({ v }: { v: any }) {
@@ -24,22 +25,10 @@ export default function EventPage({ v }: { v: any }) {
           </div>
           {v.showGuestStatus ? (
             <>
-              <p className="ev-status s-head">You're in. We'll let you know when a time is proposed.</p>
+              <p className="ev-status s-head">{v.guestStatus}</p>
             </>
           ) : null}
-          {v.showEditLink ? (
-            <section className="glass f-invite s-body" aria-labelledby="edit-link-h">
-              <div className="f-invite-text">
-                <h2 id="edit-link-h" className="comp-h">Your private edit link</h2>
-                <p className="f-link" ref={v.setEditLinkEl}>{v.editLinkText}</p>
-                <p className="small">Use this to edit your response on another device. Don't share it.</p>
-                <div className="btn-row">
-                  <button type="button" className="btn btn-secondary" onClick={v.copyEditLink}>Copy link</button>
-                  <p className="small copy-msg" role="status" aria-live="polite">{v.editLinkMsg}</p>
-                </div>
-              </div>
-            </section>
-          ) : null}
+          <LiveResults v={v} />
           {v.showFresh ? (
             <>
               <section className="glass f-invite s-body" aria-label="Invite link">
@@ -57,10 +46,9 @@ export default function EventPage({ v }: { v: any }) {
                 </svg>
 ) : null}
               </section>
-              <p className="f-wait s-body">{v.isPrototype ? 'The best time shows up once people respond.' : 'Results will appear here.'}</p>
+              {v.isPrototype ? <p className="f-wait s-body">The best time shows up once people respond.</p> : null}
             </>
           ) : null}
-          {v.resultsPending && !v.showFresh ? <p className="f-sub s-body">Results will appear here.</p> : null}
           {v.showResults ? (
             <>
               <section className="ev-best s-body" aria-labelledby="best-label">
@@ -135,6 +123,13 @@ export default function EventPage({ v }: { v: any }) {
               </aside>
             </>
           ) : null}
+          {v.showEditLink ? (
+            <p className="small s-body">
+              Editing on another device?{' '}
+              <button type="button" className="text-btn text-btn-muted" onClick={v.copyEditLink}>Copy your edit link</button>.
+              {' '}<span role="status" aria-live="polite">{v.editLinkMsg}</span>
+            </p>
+          ) : null}
           <nav className="ev-links s-body" aria-label="More">
             {v.isPrototype || v.isGuestView ? <button type="button" className="text-btn" onClick={v.editMyResponse}>Edit my response</button> : null}
             {v.isGuestView && v.canSwitchGuest ? <button type="button" className="text-btn text-btn-muted" onClick={v.switchGuest}>{v.switchLabel}</button> : null}
@@ -145,7 +140,7 @@ export default function EventPage({ v }: { v: any }) {
                 {v.isPrototype ? <button type="button" className="text-btn" onClick={v.previewGuest}>Preview as a guest</button> : null}
                 {/* Plain <a>, not next/link: a full page load keeps Main's and Event's CSS apart. */}
                 {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                <a className="text-btn" href="/example" onClick={v.saveForReturn}>Preview with sample responses</a>
+                {v.isPrototype ? <a className="text-btn" href="/example" onClick={v.saveForReturn}>Preview with sample responses</a> : null}
               </>
             ) : null}
             {v.isGuestView ? (

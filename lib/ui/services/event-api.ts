@@ -21,6 +21,16 @@ export async function fetchOwnResponse(eventId: string, credential: string): Pro
   return { ok: true, body: await res.json() };
 }
 
+/** Live aggregates. Guests and viewers send no credential; only the organiser page sends its token, as a header. */
+export async function fetchResults(eventId: string, organiserToken?: string | null): Promise<{ ok: true; body: unknown } | { ok: false; status: number }> {
+  const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/results`, {
+    headers: organiserToken ? { Authorization: `Bearer ${organiserToken}` } : {},
+    cache: 'no-store',
+  });
+  if (!res.ok) return { ok: false, status: res.status };
+  return { ok: true, body: await res.json() };
+}
+
 export async function saveOwnResponse(eventId: string, credential: string, body: unknown): Promise<{ ok: true; body: unknown } | { ok: false; message: string; field?: string }> {
   const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/response`, {
     method: 'PUT',

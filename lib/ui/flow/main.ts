@@ -58,9 +58,11 @@ export class Component extends DCLogic {
     this._prev = this.state;
     this.maybeGrowDiscs();
     if (typeof this.tryRestoreGuest === 'function') this.tryRestoreGuest();
+    this.syncResultsPolling();
   }
 
   componentWillUnmount() {
+    this.stopResultsPolling();
     if (this.timer) clearTimeout(this.timer);
     if (this.parseTimer) clearTimeout(this.parseTimer);
     var t = this.timers; Object.keys(t).forEach(function (k) { clearTimeout(t[k]); });
@@ -83,6 +85,7 @@ export class Component extends DCLogic {
       try { this.savedEl.focus({ preventScroll: true }); this.savedEl.scrollIntoView({ block: 'center', behavior: this.motion() }); } catch (e) {}
     }
     this.maybeGrowDiscs();
+    this.syncResultsPolling();
   }
   }
 mix(Component, [AppMixin, LandingMixin, CreateMixin, JoinMixin, RespondMixin, ConditionsSheetMixin, EventPageMixin, ProposeSheetMixin]);
