@@ -52,7 +52,7 @@ export default function Respond({ v }: { v: any }) {
                     <div className={d.revealCls}>
                       <div className="reveal-inner">
                         <div className="reveal-body">
-                          <button type="button" className="tl" onClick={d.tapBar} aria-label={d.barAria}>
+                          <button type="button" className={d.barCls} onClick={d.tapBar} onPointerDown={d.barDown} onPointerMove={d.barMove} onPointerUp={d.barUp} onPointerCancel={d.barCancel} onLostPointerCapture={d.barUp} aria-label={d.barAria}>
                             <span className="tl-track">
                               {(d.fills || []).map((f: any, $index: number) => (
                                 <Fragment key={$index}>

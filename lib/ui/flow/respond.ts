@@ -6,6 +6,7 @@ import { clone, mergeRanges, emptyMaps } from '../utils/helpers';
 import { joinList, describe, fmtTick, rangeText } from '../utils/format';
 import { recordMyEvent, saveEventData } from '../services/storage';
 import { minuteInWindow, untilFromWheel, wheelMinute } from '../utils/wheel-time';
+import { DRAG_PX, moveEndpoint, nearestEndpoint, pointerMinute, snapMinute } from '../utils/timeline';
 /* Respond screen: days, availability, willingness, submit */
 export class RespondMixin {
   slotById(id) { var l = this.state.slots; for (var i = 0; i < l.length; i++) { if (l[i].id === id) return l[i]; } return null; }
@@ -45,34 +46,50 @@ export class RespondMixin {
     if (merged.length !== (this.state.ranges[id] || []).length) patch.openWheel = this.withKey('openWheel', id, null);
     this.change(patch);
   }
+  barRanges(id) {
+    var w = this.state.win; var rs = mergeRanges(this.state.ranges[id] || []);
+    return rs.length ? rs : [{ s: w.s, e: w.e }];
+  }
+  barMinute(e) {
+    var w = this.state.win; var rect = e.currentTarget.getBoundingClientRect();
+    return snapMinute(pointerMinute(e.clientX, rect.left, rect.width, w), w);
+  }
   tapBar(id, e) {
-    var w = this.state.win;
     if (!e || e.detail === 0) { this.toggleWheels(id, 0); return; }
-    var rect = e.currentTarget.getBoundingClientRect();
-    var ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    var m = w.s + ratio * (w.e - w.s);
-    var cands = [w.s, w.e];
-    for (var h = Math.ceil(w.s / 60) * 60; h <= w.e; h += 60) cands.push(h);
-    var hit = cands[0];
-    cands.forEach(function (c) { if (Math.abs(c - m) < Math.abs(hit - m)) hit = c; });
-    var rs = mergeRanges(this.state.ranges[id] || []);
-    if (!rs.length) rs = [{ s: w.s, e: w.e }];
-    var inside = -1;
-    rs.forEach(function (r, i) { if (hit >= r.s && hit <= r.e && inside < 0) inside = i; });
-    if (inside >= 0) { var r = rs[inside]; if (hit - r.s < r.e - hit) r.s = hit; else r.e = hit; }
-    else {
-      var best = -1; var bestD = Infinity; var bestEnd = false;
-      rs.forEach(function (r2, i) {
-        var dd = hit < r2.s ? r2.s - hit : hit - r2.e; var isEnd = hit > r2.e;
-        if (dd < bestD || (dd === bestD && isEnd)) { best = i; bestD = dd; bestEnd = isEnd; }
-      });
-      if (bestEnd) rs[best].e = hit; else rs[best].s = hit;
+    if (this.barGesture === 'moved') return;
+    var rs = this.barRanges(id); var hit = this.barMinute(e);
+    this.setRanges(id, moveEndpoint(rs, nearestEndpoint(rs, hit), hit, this.state.win));
+  }
+  // A press becomes a drag once it moves DRAG_PX mostly sideways; mostly vertical is left to page scrolling.
+  // Either way the gesture is no longer a tap, so the click that may follow is ignored.
+  barDown(id, e) {
+    this.barGesture = null;
+    if (!e.isPrimary || e.button !== 0) return;
+    var rs = this.barRanges(id);
+    this.barGesture = { id: id, pointerId: e.pointerId, x: e.clientX, y: e.clientY, base: rs, orig: this.state.ranges[id], target: nearestEndpoint(rs, this.barMinute(e)), dragging: false, last: null };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  barMove(id, e) {
+    var g = this.barGesture;
+    if (!g || g === 'moved' || g.id !== id || g.pointerId !== e.pointerId) return;
+    if (!g.dragging) {
+      var dx = Math.abs(e.clientX - g.x); var dy = Math.abs(e.clientY - g.y);
+      if (Math.max(dx, dy) < DRAG_PX) return;
+      if (dx <= dy) { this.barGesture = 'moved'; return; }
+      g.dragging = true; this.setState({ barDrag: id });
     }
-    rs.forEach(function (r3) {
-      if (r3.e - r3.s < 60) { if (r3.s + 60 <= w.e) r3.e = r3.s + 60; else { r3.e = w.e; r3.s = w.e - 60; } }
-      r3.s = Math.max(w.s, r3.s); r3.e = Math.min(w.e, r3.e);
-    });
-    this.setRanges(id, rs);
+    var hit = this.barMinute(e);
+    if (hit === g.last) return;
+    g.last = hit;
+    this.setRanges(id, moveEndpoint(g.base, g.target, hit, this.state.win));
+  }
+  barEnd(id, e, cancelled) {
+    var g = this.barGesture;
+    if (!g || g === 'moved' || g.id !== id || g.pointerId !== e.pointerId) return;
+    this.barGesture = g.dragging ? 'moved' : null;
+    if (!g.dragging) return;
+    if (cancelled) this.setRanges(id, g.orig || g.base);
+    this.setState({ barDrag: null });
   }
   setRangeEdge(id, idx, edge, val) {
     var w = this.state.win; var rs = clone(this.state.ranges[id] || []); var r = rs[idx];
@@ -200,10 +217,15 @@ export class RespondMixin {
         setNotFree: function () { self.setAvail(sl.id, 0); }, setFree: function () { self.setAvail(sl.id, 1); }, setFav: function () { self.setAvail(sl.id, 2); },
         setEl: function (el) { self.slotEls[sl.id] = el; },
         revealCls: 'reveal' + (open ? ' is-open' : ''),
-        fills: rs.map(function (r) { return { cls: 'tl-fill ' + (fav ? 'glass-red' : 'is-free'), left: String(((r.s - w.s) / span) * 100), width: String(((r.e - r.s) / span) * 100) }; }),
+        fills: rs.map(function (r) { return { cls: 'tl-fill ' + (fav ? 'glass-red' : 'glass-silver'), left: String(((r.s - w.s) / span) * 100), width: String(((r.e - r.s) / span) * 100) }; }),
         ticks: ticks,
         barAria: sl.day + ' timeline. Tap an hour to move the nearest end of your time. Currently ' + rs.map(rangeText).join(' and ') + '.',
         tapBar: function (e) { self.tapBar(sl.id, e); },
+        barCls: 'tl' + (s.barDrag === sl.id ? ' is-dragging' : ''),
+        barDown: function (e) { self.barDown(sl.id, e); },
+        barMove: function (e) { self.barMove(sl.id, e); },
+        barUp: function (e) { self.barEnd(sl.id, e, false); },
+        barCancel: function (e) { self.barEnd(sl.id, e, true); },
         ranges: ranges, canAddRange: open && !!self.addRangeFor(sl.id), addRange: function () { self.addRange(sl.id); },
         willThumbCls: wt.cls, willThumbX: wt.x,
         yesCls: 'seg-opt' + (wv === 'yes' ? ' is-on' : ''), yesPressed: wv === 'yes' ? 'true' : 'false',
