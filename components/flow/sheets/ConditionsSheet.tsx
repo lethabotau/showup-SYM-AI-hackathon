@@ -23,7 +23,6 @@ export default function ConditionsSheet({ v }: { v: any }) {
               <button type="button" className="btn btn-secondary btn-sm" onClick={v.interpretSheet} disabled={v.interpretBusy} aria-busy={v.interpretBusy}>{v.interpretLabel}</button>
             </>
           ) : null}
-          {v.showSourceLabel ? <p className="quiet">{v.sourceLabel}</p> : null}
           {v.showLines ? (
             <ul className="cond-lines" role="status">
               {v.sheetLines.map((line: string, i: number) => <li key={i} className="cond-text">{line}</li>)}

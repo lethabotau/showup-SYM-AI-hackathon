@@ -15,3 +15,23 @@
 @keyframes fade-out{from{opacity:1}to{opacity:0}}
 @keyframes reveal-unclip{from{overflow:hidden}to{overflow:visible}}
 
+/* Entrance animations: run once when an element mounts; nothing animates under reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes su-rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .su-rise { animation: su-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .su-stagger > * { animation: su-rise 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+  .su-stagger > *:nth-child(1){animation-delay:.00s}
+  .su-stagger > *:nth-child(2){animation-delay:.08s}
+  .su-stagger > *:nth-child(3){animation-delay:.16s}
+  .su-stagger > *:nth-child(4){animation-delay:.24s}
+  .su-stagger > *:nth-child(5){animation-delay:.32s}
+  .su-stagger > *:nth-child(6){animation-delay:.40s}
+  .su-stagger > *:nth-child(7){animation-delay:.48s}
+}
+.su-word { display:inline-block; }
+@media (prefers-reduced-motion: no-preference){
+  .su-word { animation: su-rise 0.4s cubic-bezier(0.22,1,0.36,1) both; animation-delay: calc(var(--i) * 0.06s); }
+}
