@@ -9,6 +9,7 @@ interface StoredEvent {
   durationMin: number;
   timezone: string;
   days: { date: string; start: number; end: number }[];
+  participants?: { name: string; responded: boolean }[];
 }
 
 export interface EventLinks { guestPath: string; organiserPath?: string }
@@ -26,7 +27,8 @@ export function toFlowEvent(ev: StoredEvent, links: EventLinks) {
     timezone: ev.timezone,
     slots,
     win: first ? first.win : { s: 1020, e: 1440 },
-    responses: [],
+    responses: (ev.participants || []).map((p) => ({ who: p.name, role: 'guest' })),
+    participants: ev.participants || [],
     proposal: null,
     persisted: true,
     links,

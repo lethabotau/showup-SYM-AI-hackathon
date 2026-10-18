@@ -81,6 +81,11 @@ function text(v: unknown, field: string, max: number, empty: string, tooLong: st
   return { ok: true, value: s };
 }
 
+/** A participant's display name: trimmed, single-spaced, 1–30 characters. */
+export function validateName(v: unknown, field = 'name'): Validated<string> {
+  return text(v, field, NAME_MAX, 'Add your name to continue.', `Keep your name to ${NAME_MAX} characters.`);
+}
+
 export function validateCreateEvent(body: unknown, now: Date = new Date()): Validated<CreateEventInput> {
   if (!isObject(body)) return fail('body', 'Send the event as a JSON object.');
 

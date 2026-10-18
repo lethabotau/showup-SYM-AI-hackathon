@@ -8,6 +8,6 @@
     "incremental": false,
     "plugins": []
   },
-  "include": ["./**/*.ts", "../../app/api/**/*.ts", "../../scripts/db-setup.ts", "../ui/utils/persisted-event.ts"],
+  "include": ["./**/*.ts", "../../app/api/**/*.ts", "../../scripts/db-setup.ts", "../ui/utils/persisted-event.ts", "../conditions/**/*.ts"],
   "exclude": []
 }

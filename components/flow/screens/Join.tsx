@@ -27,7 +27,7 @@ export default function Join({ v }: { v: any }) {
                 ) : null}
               </div>
               <div>
-                <button type="button" className="btn btn-primary" onClick={v.joinContinue}>Continue</button>
+                <button type="button" className="btn btn-primary" onClick={v.joinContinue} disabled={v.joinDisabled} aria-busy={v.joinDisabled ? 'true' : undefined}>{v.joinLabel}</button>
               </div>
             </div>
           </div>

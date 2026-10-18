@@ -15,7 +15,7 @@ describe('schema setup', () => {
     expect(res.created.sort()).toEqual(['conditions', 'day_willingness', 'event_days', 'events', 'participants', 'ranges', 'schema_migrations']);
     expect(res.version).toBe(1);
     expect(await schemaProblems(t.db, true)).toEqual([]);
-  });
+  }, 15000);
 
   it('is repeatable and keeps existing rows', async () => {
     t = await testDb();

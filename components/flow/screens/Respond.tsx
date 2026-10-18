@@ -180,12 +180,24 @@ export default function Respond({ v }: { v: any }) {
                     <h2 className="section-h" tabIndex={-1} ref={v.setSavedEl}>Your response is in.</h2>
                     <p>{v.savedSummary}</p>
                     <div className="btn-row">
-                      {/* Plain <a>, not next/link: a full page load keeps Main's and Event's CSS apart. */}
-                      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                      <a className="btn btn-primary" href="/example" onClick={v.saveForReturn}>Continue to event</a>
+                      {v.isPersisted ? (
+                        <>
+                          <button type="button" className="btn btn-primary" onClick={v.backToEventSaved}>Back to event</button>
+                        </>
+                      ) : (
+                        <>
+                          {/* Plain <a>, not next/link: a full page load keeps Main's and Event's CSS apart. */}
+                          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                          <a className="btn btn-primary" href="/example" onClick={v.saveForReturn}>Continue to event</a>
+                        </>
+                      )}
                       <button type="button" className="btn btn-secondary" onClick={v.editResponse}>Edit response</button>
                     </div>
-                    <p className="small">Prototype: the event page shows a fixed sample with fictional responses. Your answers here don't change it.</p>
+                    {v.isPersisted ? null : (
+                      <>
+                        <p className="small">Prototype: the event page shows a fixed sample with fictional responses. Your answers here don't change it.</p>
+                      </>
+                    )}
                   </div>
                 </>
               ) : null}

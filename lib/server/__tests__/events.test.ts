@@ -30,6 +30,7 @@ describe('creating an event', () => {
         { date: '2030-01-05', start: 1320, end: 1500 },
         { date: '2030-01-11', start: 600, end: 840 },
       ],
+      participants: [],
     });
     const positions = await t.db.query(`SELECT to_char(date, 'YYYY-MM-DD') AS date, position FROM event_days WHERE event_id = $1 ORDER BY position`, [id]);
     expect(positions).toEqual([{ date: '2030-01-04', position: 0 }, { date: '2030-01-05', position: 1 }, { date: '2030-01-11', position: 2 }]);
@@ -75,7 +76,7 @@ describe('reading an event', () => {
   it('public reads expose no credential, hash or internal column', async () => {
     const { id, token } = await createEvent(t.db, input);
     const ev = await getPublicEvent(t.db, id);
-    expect(Object.keys(ev!).sort()).toEqual(['days', 'durationMin', 'id', 'organiserName', 'timezone', 'title']);
+    expect(Object.keys(ev!).sort()).toEqual(['days', 'durationMin', 'id', 'organiserName', 'participants', 'timezone', 'title']);
     const text = JSON.stringify(ev);
     expect(text).not.toContain(token);
     expect(text).not.toContain(hashToken(token));

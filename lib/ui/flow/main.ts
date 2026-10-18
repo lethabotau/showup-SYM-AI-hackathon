@@ -51,7 +51,11 @@ export class Component extends DCLogic {
     this.parseTimer = null;
   }
 
-  componentDidMount() { this._prev = this.state; this.maybeGrowDiscs(); }
+  componentDidMount() {
+    this._prev = this.state;
+    this.maybeGrowDiscs();
+    if (typeof this.tryRestoreGuest === 'function') this.tryRestoreGuest();
+  }
 
   componentWillUnmount() {
     if (this.timer) clearTimeout(this.timer);

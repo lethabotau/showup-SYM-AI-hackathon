@@ -14,6 +14,8 @@ export interface PublicEvent {
   timezone: string;
   /** In creation order (which is date order). */
   days: PublicEventDay[];
+  /** Everyone who has joined, in join order. Names are public (PRODUCT-RULES §7); responses are not. */
+  participants: { name: string; responded: boolean }[];
 }
 
 export function guestPath(id: string): string {
@@ -51,7 +53,11 @@ const EVENT_SELECT = `
   SELECT e.id, e.title, e.organiser_name, e.duration_min, e.timezone, e.organiser_token_hash,
          coalesce((SELECT json_agg(json_build_object('date', to_char(d.date, 'YYYY-MM-DD'), 'start', d.win_start, 'end', d.win_end)
                                    ORDER BY d.position)
-                     FROM event_days d WHERE d.event_id = e.id), '[]'::json) AS days
+                     FROM event_days d WHERE d.event_id = e.id), '[]'::json) AS days,
+         coalesce((SELECT json_agg(json_build_object('name', p.display_name,
+                                   'responded', EXISTS (SELECT 1 FROM day_willingness w WHERE w.participant_id = p.id))
+                                   ORDER BY p.created_seq)
+                     FROM participants p WHERE p.event_id = e.id), '[]'::json) AS participants
     FROM events e WHERE e.id = $1`;
 
 interface EventRow {
@@ -62,6 +68,7 @@ interface EventRow {
   timezone: string;
   organiser_token_hash: string;
   days: PublicEventDay[] | string;
+  participants: { name: string; responded: boolean }[] | string;
   [key: string]: unknown;
 }
 
@@ -71,6 +78,7 @@ async function loadEvent(db: Db, id: string): Promise<{ event: PublicEvent; toke
   const r = rows[0];
   if (!r) return null;
   const days = (typeof r.days === 'string' ? JSON.parse(r.days) : r.days) as PublicEventDay[];
+  const people = (typeof r.participants === 'string' ? JSON.parse(r.participants) : r.participants) as PublicEvent['participants'];
   return {
     event: {
       id: r.id,
@@ -79,6 +87,7 @@ async function loadEvent(db: Db, id: string): Promise<{ event: PublicEvent; toke
       durationMin: Number(r.duration_min),
       timezone: r.timezone,
       days: days.map((d) => ({ date: d.date, start: Number(d.start), end: Number(d.end) })),
+      participants: people.map((p) => ({ name: p.name, responded: p.responded === true })),
     },
     tokenHash: r.organiser_token_hash,
   };

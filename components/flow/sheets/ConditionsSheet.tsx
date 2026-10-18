@@ -13,6 +13,21 @@ export default function ConditionsSheet({ v }: { v: any }) {
             <p>Only you see this. In small groups, the final group may hint at it.</p>
           </div>
           <textarea className="input sheet-input" rows={2} aria-label="What would make you go" placeholder="e.g. if Sam's going and there's at least 5 of us" value={v.sheetText} onChange={v.onSheetText} />
+          {v.showOfflineNote ? (
+            <>
+              <p className="quiet">Interpreted offline — not by AI. Check the read-back before saving.</p>
+            </>
+          ) : null}
+          {v.showInterpretBtn ? (
+            <>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={v.interpretSheet}>Check this</button>
+            </>
+          ) : null}
+          {v.showReadback ? (
+            <>
+              <p className="cond-text" role="status">{v.sheetReadback}</p>
+            </>
+          ) : null}
           {v.showChips ? (
             <>
               <div className="cchips" aria-live="polite">

@@ -122,7 +122,7 @@ export default function EventPage({ v }: { v: any }) {
             </>
           ) : null}
           <nav className="ev-links s-body" aria-label="More">
-            {v.isPrototype ? <button type="button" className="text-btn" onClick={v.editMyResponse}>Edit my response</button> : null}
+            {v.isPrototype || v.isGuestView ? <button type="button" className="text-btn" onClick={v.editMyResponse}>Edit my response</button> : null}
             {v.canCopyOrgLink ? <button type="button" className="text-btn" onClick={v.copyOrgLink}>Copy organiser link</button> : null}
             {v.isOrgView ? (
               <>

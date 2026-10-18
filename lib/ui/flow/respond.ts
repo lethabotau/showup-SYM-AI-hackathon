@@ -5,6 +5,9 @@ import { STATE_LABELS } from '../data/constants';
 import { clone, mergeRanges, emptyMaps } from '../utils/helpers';
 import { joinList, describe, fmtTick, rangeText } from '../utils/format';
 import { recordMyEvent, saveEventData } from '../services/storage';
+import { saveOwnResponse, fetchOwnResponse } from '../services/event-api';
+import { loadGuestCredential } from '../services/guest-credential';
+import { applyOwnResponse, buildResponseBody, condSummary } from '../utils/response-sync';
 import { minuteInWindow, untilFromWheel, wheelMinute } from '../utils/wheel-time';
 import { DRAG_PX, moveEndpoint, nearestEndpoint, pointerMinute, snapMinute } from '../utils/timeline';
 /* Respond screen: days, availability, willingness, submit */
@@ -21,7 +24,17 @@ export class RespondMixin {
     return (s.event.responses || []).filter(function (r) { return r.role === role && r.who === s.myName; })[0] || null;
   }
   editMyResponse() {
-    var s = this.state;
+    var s = this.state; var self = this; var ev = s.event;
+    if (ev && ev.persisted) {
+      var cred = loadGuestCredential(ev.id);
+      if (!cred) { this.setState({ formError: 'Open this event from your invitation link and enter your name again.' }); return; }
+      fetchOwnResponse(ev.id, cred).then(function (r) {
+        if (!r.ok) { self.setState({ formError: 'Your guest access expired. Open the invitation link and enter your name again.' }); return; }
+        var data = r.body;
+        self.go(Object.assign({ screen: 'respond', editing: true, phase: 'editing', errors: {}, formError: '', reminderOpen: false, slots: clone(ev.slots), win: clone(ev.win), myName: data.participant.name, participantId: data.participant.id }, applyOwnResponse(ev.slots, data)));
+      }, function () { self.setState({ formError: "We couldn't load your response. Try again in a moment." }); });
+      return;
+    }
     var mine = this.myResponse();
     var maps = emptyMaps(s.event.slots);
     if (mine) {
@@ -132,6 +145,22 @@ export class RespondMixin {
       return;
     }
     this.setState({ phase: 'saving', formError: '', errors: {} });
+    var ev = s.event;
+    if (ev && ev.persisted) {
+      var cred = loadGuestCredential(ev.id);
+      if (!cred) { this.setState({ phase: 'editing', formError: 'Your guest access expired. Open the invitation link and enter your name again.' }); return; }
+      saveOwnResponse(ev.id, cred, buildResponseBody(s.slots, s)).then(function (r) {
+        if (!r.ok) { self.setState({ phase: 'editing', formError: r.message }); return; }
+        var data = r.body;
+        var responses = (ev.responses || []).slice();
+        if (!responses.some(function (x) { return x.who === data.participant.name; })) responses.push({ who: data.participant.name, role: 'guest' });
+        var participants = (ev.participants || []).map(function (p) { return p.name === data.participant.name ? { name: p.name, responded: true } : p; });
+        self.go(Object.assign(applyOwnResponse(ev.slots, data), {
+          event: Object.assign({}, ev, { responses: responses, participants: participants }), screen: 'event', mode: 'guest', phase: 'saved', dirty: false, editing: false, formError: '',
+        }));
+      }, function () { self.setState({ phase: 'editing', formError: "We couldn't reach the server. Check your connection and try again." }); });
+      return;
+    }
     this.timer = setTimeout(function () {
       if (self.state.mode === 'participant') { self.setState({ phase: 'saved', dirty: false }); return; }
       self.saveToEvent();
@@ -232,7 +261,7 @@ export class RespondMixin {
         ifCls: 'seg-opt' + (wv === 'if' ? ' is-on' : ''), ifPressed: wv === 'if' ? 'true' : 'false',
         noCls: 'seg-opt' + (wv === 'no' ? ' is-on' : ''), noPressed: wv === 'no' ? 'true' : 'false',
         pickYes: function () { self.pick(sl.id, 'yes'); }, pickIf: function () { self.pick(sl.id, 'if'); }, pickNo: function () { self.pick(sl.id, 'no'); },
-        showError: open && !!s.errors[sl.id], showConds: showConds, condText: describe(c),
+        showError: open && !!s.errors[sl.id], showConds: showConds, condText: (s.event && s.event.persisted) ? condSummary(c) : describe(c),
         editConds: function () { self.openSheet(sl.id); },
         canReuse: showConds && self.reuseTargets(sl.id).length > 0, reuse: function () { self.reuse(sl.id); },
         hasApplied: showConds && !!s.applied[sl.id], appliedNote: s.applied[sl.id]
@@ -251,6 +280,7 @@ export class RespondMixin {
       saving: saving, savingStr: saving ? 'true' : 'false',
       submitLabel: saving ? 'Saving…' : (s.editing || (participant && s.phase === 'saved') ? 'Save changes' : 'Submit response'),
       showSaved: savedClean, savedSummary: savedClean ? this.savedSummary() : '',
+      isPersisted: !!(s.event && s.event.persisted), backToEventSaved: function () { self.go({ screen: 'event', editing: false, sheet: null }); },
       submit: function () { self.submit(); }, markNone: function () { self.markNone(); },
       undoNone: function () { self.change({ noneWork: false }); },
       editResponse: function () { if (self.state.slots[0]) self.focusSlot(self.state.slots[0].id); },

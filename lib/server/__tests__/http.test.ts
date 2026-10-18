@@ -58,6 +58,7 @@ describe('POST /api/events', () => {
     expect(await got.json()).toEqual({
       id: out.id, title: 'Dinner', organiserName: 'Alex', durationMin: 120, timezone: 'Australia/Sydney',
       days: [{ date: '2030-01-04', start: 1320, end: 1560 }, { date: '2030-01-10', start: 1140, end: 1380 }],
+      participants: [],
     });
     expect((await authoriseOrganiser(t.db, out.id, m?.[2])).status).toBe('ok');
   });
