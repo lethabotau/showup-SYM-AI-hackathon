@@ -164,6 +164,7 @@ export class EventPageMixin {
       isPersisted: persisted, isPrototype: !persisted,
       shareLinkText: persisted ? location.host + links.guestPath : 'showup.example/e/N8R2VQ',
       shareLinkTitle: persisted ? undefined : 'Prototype URL, not a live link',
+      guestUrl: persisted && links.guestPath ? location.origin + links.guestPath : '',
       copyLink: function () { self.copy(persisted ? location.origin + links.guestPath : FRESH_LINK, self.linkEl, 'linkMsg', 'Link copied.', "Couldn't copy automatically. The link is selected, so copy it from there."); },
       canCopyOrgLink: orgView && persisted && !!links.organiserPath,
       copyOrgLink: function () { self.copy(location.origin + links.organiserPath, null, 'linkMsg', 'Organiser link copied. Keep it private.', "Couldn't copy automatically. Your organiser link is this page's address."); },
