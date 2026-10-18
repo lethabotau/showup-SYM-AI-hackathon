@@ -30,12 +30,13 @@ function earlier(a: RankedSlot, ai: number, b: RankedSlot, bi: number, byDate: b
 
 /**
  * Ranks the event's days by their chosen fixed-duration slot (see slotStats), using each day's `win` or
- * else the event window, and the event duration. A day where nobody would go is never best; when no day
- * has anyone viable, `best` is null ("No viable plan yet"). Otherwise, in order:
+ * else the event window, and the event duration. A day where nobody is viable is never best; when no day
+ * has anyone viable, `best` is null ("No viable plan yet"). Otherwise, in order (PRODUCT-RULES §6):
  *   1. the largest viable group,
- *   2. the most Favourites among that group (skipped when `favourites: false`),
- *   3. the earliest start (date, then time),
- *   4. creation order.
+ *   2. the most tentative people,
+ *   3. the most Favourites among the viable group (skipped when `favourites: false`),
+ *   4. the earliest start (date, then time),
+ *   5. creation order.
  */
 export function rankSlots(ev: EventData, opts: RankOptions = {}): Ranking {
   const useFav = opts.favourites !== false;
@@ -50,6 +51,7 @@ export function rankSlots(ev: EventData, opts: RankOptions = {}): Ranking {
     if (d.go <= 0) return;
     if (best) {
       if (d.go !== best.go) { if (d.go < best.go) return; }
+      else if (d.tentative !== best.tentative) { if (d.tentative < best.tentative) return; }
       else if (useFav && d.favourites !== best.favourites) { if (d.favourites < best.favourites) return; }
       else if (earlier(d, i, best, bestIdx, byDate) >= 0) return;
     }

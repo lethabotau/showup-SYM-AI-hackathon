@@ -13,7 +13,7 @@ const HOUR = { duration: 60 };
 type Answer = { avail?: number; will?: Willingness; ranges?: Range[]; conds?: Condition[] };
 /** One response; every answer defaults to Free, Yes, the whole 5pm–12am window, no conditions. */
 function person(who: string, answers: Record<string, Answer>): Response {
-  const r: Response = { who, role: 'guest', avail: {}, ranges: {}, will: {}, conds: {} };
+  const r: Response = { id: who, who, role: 'guest', avail: {}, ranges: {}, will: {}, conds: {} };
   for (const [id, a] of Object.entries(answers)) {
     r.avail[id] = a.avail ?? 1;
     r.will[id] = a.will === undefined ? 'yes' : a.will;
@@ -24,8 +24,8 @@ function person(who: string, answers: Record<string, Answer>): Response {
 }
 const event = (slots: Slot[], responses: Response[], win: Range = WIN, duration?: number): EventData =>
   ({ slots, win, responses, ...(duration ? { duration } : {}) });
-const needs = (name: string): Condition => ({ type: 'person', name });
-const atLeast = (n: number): Condition => ({ type: 'min', n: String(n) });
+const needs = (id: string): Condition => ({ type: 'requires', people: [id] });
+const atLeast = (n: number): Condition => ({ type: 'min_attendees', n });
 
 describe('canonical example', () => {
   it('Friday 8 free / 4 viable vs Saturday 6 free / 6 viable: Saturday wins', () => {

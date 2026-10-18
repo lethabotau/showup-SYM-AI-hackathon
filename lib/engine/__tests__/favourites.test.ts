@@ -3,14 +3,13 @@
 import { describe, expect, it } from 'vitest';
 import { rankSlots } from '../index';
 import type { EventData, Response, Willingness } from '../types';
-import { demoEvent, ORG_RESP } from '../../ui/data/fixtures';
-import { clone } from '../../ui/utils/helpers';
+import { ALEX, a6Event } from './a6-fixtures';
 
 /** A response with the same answer shape on slots a and b: [avail, will] per slot; full window, no conditions. */
 function person(who: string, a: [number, Willingness], b: [number, Willingness]): Response {
   const full = [{ s: 1020, e: 1440 }];
   return {
-    who, role: 'guest',
+    id: who, who, role: 'guest',
     avail: { a: a[0], b: b[0] }, will: { a: a[1], b: b[1] },
     ranges: { a: full, b: full }, conds: { a: null, b: null }
   };
@@ -24,7 +23,7 @@ describe('favourites tie-break', () => {
       person('Ben', [1, 'yes'], [1, 'yes']),
       person('Cleo', [1, 'if'], [0, null])     // free on a only (but eliminated): a has more free (3 vs 2)
     ]);
-    ev.responses[2]!.conds.a = [{ type: 'person', name: 'Zed' }];
+    ev.responses[2]!.conds.a = [{ type: 'requires', people: ['Zed'] }];
     const r = rankSlots(ev);
     expect(r.days.map((d) => [d.slot.id, d.go, d.favourites, d.free])).toEqual([['a', 2, 0, 3], ['b', 2, 1, 2]]);
     expect(r.best?.slot.id).toBe('b');
@@ -48,7 +47,7 @@ describe('favourites tie-break', () => {
       person('Ben', [1, 'yes'], [2, 'no']),    // favourite but won't go
       person('Cleo', [1, 'yes'], [2, 'if'])    // favourite but eliminated (needs 4 people)
     ]);
-    ev.responses[2]!.conds.b = [{ type: 'min', n: '4' }];
+    ev.responses[2]!.conds.b = [{ type: 'min_attendees', n: 4 }];
     ev.responses[1]!.will.a = 'no';
     const r = rankSlots(ev);
     expect(r.days.map((d) => [d.slot.id, d.go, d.favourites])).toEqual([['a', 2, 0], ['b', 1, 0]]);
@@ -63,6 +62,6 @@ describe('favourites tie-break', () => {
   });
 
   it('Alex alone (A6 fixture): his Favourite Saturday now beats Friday', () => {
-    expect(rankSlots(demoEvent([clone(ORG_RESP)])).best?.slot.id).toBe('sat');
+    expect(rankSlots(a6Event([ALEX()])).best?.slot.id).toBe('sat');
   });
 });

@@ -113,6 +113,8 @@ Order:
 
 If the best slot has 0 viable people → show **"No viable plan yet"** instead of a recommendation. If it also has tentative people, show the tentative count alongside.
 
+A day with no viable slot is represented by its slot with the most tentative, then most free, then earliest.
+
 The dashboard shows the best slot per day with free, will-come and tentative counts, the recommendation, a privacy-safe reason line, and "Most free: X" next to "Most will come: Y" whenever they differ.
 
 ---

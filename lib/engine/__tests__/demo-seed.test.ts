@@ -1,5 +1,5 @@
 /* PRODUCT-RULES §8: Fri + Sat, window 18:00–23:00, duration 3 h. Everyone is available 19:00–22:00 on the
-   days they didn't answer No. Conditions use the engine's current shape (person / min). */
+   days they didn't answer No. Participant ids are the display names. */
 import { describe, expect, it } from 'vitest';
 import { rankSlots } from '../index';
 import type { Condition, EventData, Response, Willingness } from '../types';
@@ -11,14 +11,14 @@ const DAYS = [{ id: 'fri', iso: '2026-10-23' }, { id: 'sat', iso: '2026-10-24' }
 function person(who: string, fri: Willingness, sat: Willingness, conds: { fri?: Condition[]; sat?: Condition[] } = {}): Response {
   const range = (w: Willingness) => (w === 'no' ? [] : [{ ...SLOT }]);
   return {
-    who, role: 'guest',
+    id: who, who, role: 'guest',
     avail: { fri: 1, sat: 1 }, will: { fri, sat },
     ranges: { fri: range(fri), sat: range(sat) },
     conds: { fri: conds.fri ?? null, sat: conds.sat ?? null }
   };
 }
-const needs = (name: string): Condition => ({ type: 'person', name });
-const atLeast = (n: number): Condition => ({ type: 'min', n: String(n) });
+const needs = (id: string): Condition => ({ type: 'requires', people: [id] });
+const atLeast = (n: number): Condition => ({ type: 'min_attendees', n });
 
 const SEED = [
   person('Alex', 'yes', 'yes'), person('Ben', 'yes', 'yes'), person('Chloe', 'yes', 'yes'),

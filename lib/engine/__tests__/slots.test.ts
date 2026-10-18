@@ -11,7 +11,7 @@ const WIN: Range = { s: h(18), e: h(23) };
 type Answer = { avail?: number; will?: Willingness; ranges?: Range[]; favs?: Range[]; conds?: Condition[] };
 /** One response; every answer defaults to Free, Yes, the whole 6–11pm window, no conditions. */
 function person(who: string, answers: Record<string, Answer>): Response {
-  const r: Response = { who, role: 'guest', avail: {}, ranges: {}, will: {}, conds: {} };
+  const r: Response = { id: who, who, role: 'guest', avail: {}, ranges: {}, will: {}, conds: {} };
   for (const [id, a] of Object.entries(answers)) {
     r.avail[id] = a.avail ?? 1;
     r.will[id] = a.will === undefined ? 'yes' : a.will;
@@ -22,7 +22,7 @@ function person(who: string, answers: Record<string, Answer>): Response {
   return r;
 }
 const event = (slots: Slot[], responses: Response[], extra: Partial<EventData> = {}): EventData => ({ slots, win: WIN, responses, ...extra });
-const needs = (name: string): Condition => ({ type: 'person', name });
+const needs = (id: string): Condition => ({ type: 'requires', people: [id] });
 const starts = (ev: EventData, id: string) => rankSlots(ev).days.find((d) => d.slot.id === id)!.slots.map((t) => t.s);
 
 describe('slot generation', () => {
@@ -97,7 +97,7 @@ describe('Available and Free', () => {
     expect(rankSlots(ev).days[0]!.slots.find((t) => t.s === h(19.5))!.free).toBe(0);
   });
 
-  it('Free excludes No and missing willingness; Not free never counts; If… without conditions is Yes', () => {
+  it('Free excludes No and missing willingness; Not free never counts; If… without conditions is not free', () => {
     const ev = event([{ id: 'a' }], [
       person('Ana', { a: {} }),
       person('Ben', { a: { will: 'if' } }),
@@ -106,8 +106,8 @@ describe('Available and Free', () => {
       person('Eli', { a: { avail: 0 } })
     ]);
     const st = slotStats('a', ev.responses, WIN);
-    expect([st.free, st.go, st.group]).toEqual([2, 2, ['Ana', 'Ben']]);
-    expect(st.freeList.map((r) => r.who)).toEqual(['Ana', 'Ben']);
+    expect([st.free, st.go, st.group]).toEqual([1, 1, ['Ana']]);
+    expect(st.freeList.map((r) => r.who)).toEqual(['Ana']);
   });
 
   it('free is counted per slot, not per day', () => {

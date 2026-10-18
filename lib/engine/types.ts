@@ -1,7 +1,6 @@
 /*
- * Types for the data the UI already produces (see lib/ui/state.ts, lib/ui/flow/respond.ts saveToEvent,
- * lib/ui/flow/conditions-sheet.ts confirmSheet, and SCREENS.md §9). No new shapes: these describe the
- * existing JSON so the engine can run on it unchanged.
+ * Engine input. Condition shapes and field names follow docs/PRODUCT-RULES.md §4. The engine receives only
+ * confirmed conditions; filtering unconfirmed ones happens upstream.
  */
 
 /** Minutes since the day's midnight, end exclusive; values past 1440 are after midnight (1500 = 1am). */
@@ -20,30 +19,36 @@ export interface Slot {
   win?: Window;
 }
 
-/**
- * A condition chip as stored on a response ("If…").
- *  - person: goes only if that named person is in the group (matched case-insensitively against `who`).
- *  - min:    goes only if the group has at least `n` people (including them). `n` is a numeric string, as the UI stores it.
- * `known` is a UI-only flag (unknown names can't be confirmed); the engine ignores it, as the original does.
- */
-export type Condition =
-  | { type: 'person'; name: string; known?: boolean }
-  | { type: 'min'; n: string };
+/** Depends on who attends: all of `people` (requires), at least one (requires_any), or at least `n` people including self. */
+export type GroupCondition =
+  | { type: 'requires'; people: ParticipantId[] }
+  | { type: 'requires_any'; people: ParticipantId[] }
+  | { type: 'min_attendees'; n: number };
+
+/** Narrows when the participant is free: the slot must start at or after `earliest_start` and end by `latest_end`. */
+export interface TimeCondition { type: 'time'; earliest_start?: number; latest_end?: number }
+
+/** Something the engine can't evaluate; makes the participant tentative instead of viable. */
+export interface UnresolvableCondition { type: 'unresolvable'; summary: string }
+
+export type Condition = GroupCondition | TimeCondition | UnresolvableCondition;
 
 /** 0 = Not free, 1 = Free, 2 = Favourite. */
 export type Availability = number;
 
 export type Willingness = 'yes' | 'if' | 'no' | null;
 
-/** One person's answers, keyed by slot id. `who` is their display name and acts as their id. */
+/** One person's answers, keyed by day (slot) id. Conditions apply only on days answered If…. */
 export interface Response {
+  /** Stable participant id; conditions refer to people by this. */
+  id: ParticipantId;
+  /** Display name. */
   who: string;
   role: 'organiser' | 'guest' | string;
   avail: Record<string, Availability | undefined>;
   ranges: Record<string, Range[] | undefined>;
   will: Record<string, Willingness | undefined>;
   conds: Record<string, Condition[] | null | undefined>;
-  condText?: Record<string, string | undefined>;
   /**
    * Favourite ranges per day. When absent, a day marked Favourite (avail = 2) treats its availability
    * ranges as Favourite ranges (the current UI's meaning). When present, only these count.
@@ -59,5 +64,5 @@ export interface EventData {
   duration?: number;
 }
 
-/** Participant id used in engine output. Display names are unique within an event (Join rejects duplicates). */
+/** Stable participant id, used in conditions and engine output. */
 export type ParticipantId = string;

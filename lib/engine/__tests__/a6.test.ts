@@ -2,15 +2,14 @@
 import { describe, expect, it } from 'vitest';
 import { rankSlots, slotWindow, viableGroup } from '../index';
 import type { EventData } from '../types';
-// Fixtures and formatting come from the UI (read-only), so the tests use exactly what the app uses.
-import { demoEvent, ORG_RESP, GUEST_RESP } from '../../ui/data/fixtures';
-import { clone } from '../../ui/utils/helpers';
+import { ALEX, JESS, a6Event } from './a6-fixtures';
+// Formatting comes from the UI (read-only).
 import { fmtCompact } from '../../ui/utils/format';
 
 // A6 records the prototype's ranking, which ignores Favourites.
 const OLD = { favourites: false };
-const alexAlone = (): EventData => demoEvent([clone(ORG_RESP)]);
-const alexAndJess = (): EventData => demoEvent([clone(ORG_RESP), clone(GUEST_RESP)]);
+const alexAlone = (): EventData => a6Event([ALEX()]);
+const alexAndJess = (): EventData => a6Event([ALEX(), JESS()]);
 const dots = (ev: EventData, id: string) => {
   const d = rankSlots(ev, OLD).days.find((x) => x.slot.id === id)!;
   const w = slotWindow(ev.win, d.slot, d);
@@ -42,7 +41,7 @@ describe('A6: Alex + Jess', () => {
     expect(v.group).toEqual(['Alex']);
     expect(v.rounds).toHaveLength(1);
     expect(v.rounds[0]!.removed).toEqual(['Jess']);
-    expect(v.rounds[0]!.failed['Jess']).toEqual([{ type: 'min', n: '3' }]);
+    expect(v.rounds[0]!.failed['Jess']).toEqual([{ type: 'min_attendees', n: 3 }]);
   });
   it("fri dots: 7 – 11pm, 1 of 1 (Jess's 6–10pm range doesn't cover the window)", () => {
     expect(dots(alexAndJess(), 'fri')).toEqual({ time: '7 – 11pm', go: 1, free: 1 });
