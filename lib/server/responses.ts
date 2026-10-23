@@ -382,3 +382,8 @@ export function toEngineResponses(people: readonly ParticipantRow[], rows: Rows)
     return [r];
   });
 }
+
+/** Removes a guest and, by cascade, their ranges, willingness and conditions. */
+export async function leaveEvent(db: Db, eventId: string, participantId: string): Promise<void> {
+  await db.query('DELETE FROM participants WHERE id = $1 AND event_id = $2', [participantId, eventId]);
+}

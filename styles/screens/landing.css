@@ -12,3 +12,6 @@
 .my-status{grid-column:1;font-size:13px;color:var(--text-muted)}
 .my-role{grid-column:2;grid-row:1 / span 2;font-size:12px;font-weight:500;color:var(--text-muted)}
 
+
+.my-item{position:relative}
+.my-item .my-close{top:-8px;right:-8px;width:26px;height:26px;background:#FFFFFF;box-shadow:0 1px 4px rgba(0,0,0,0.18)}
