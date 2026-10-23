@@ -5,6 +5,8 @@ export type Range = { s: number; e: number };
 export type Endpoint = { idx: number; edge: 's' | 'e' };
 
 export const MIN_RANGE = 60;
+/** The drag bar snaps to this many minutes. */
+const SNAP_MIN = 30;
 /** Pointer travel that turns a press into a drag (or a scroll) instead of a tap. */
 export const DRAG_PX = 6;
 
@@ -14,10 +16,10 @@ export function pointerMinute(clientX: number, left: number, width: number, win:
   return win.s + ratio * (win.e - win.s);
 }
 
-/** Snap to the nearest whole hour or window edge; ties keep the earlier candidate. */
+/** Snap to the nearest half hour or window edge; ties keep the earlier candidate. */
 export function snapMinute(m: number, win: Range): number {
   const cands = [win.s, win.e];
-  for (let h = Math.ceil(win.s / 60) * 60; h <= win.e; h += 60) cands.push(h);
+  for (let h = Math.ceil(win.s / SNAP_MIN) * SNAP_MIN; h <= win.e; h += SNAP_MIN) cands.push(h);
   let hit = cands[0]!;
   for (const c of cands) if (Math.abs(c - m) < Math.abs(hit - m)) hit = c;
   return hit;
