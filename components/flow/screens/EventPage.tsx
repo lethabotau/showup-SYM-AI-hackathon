@@ -136,6 +136,17 @@ export default function EventPage({ v }: { v: any }) {
               {' '}<span role="status" aria-live="polite">{v.editLinkMsg}</span>
             </p>
           ) : null}
+          {v.showInviteBottom ? (
+            <section className="glass f-invite ev-invite-bottom s-body" aria-label="Invite link">
+              <div className="f-invite-text">
+                <p className="f-link" ref={v.setLinkEl}>{v.shareLinkText}</p>
+                <div className="btn-row">
+                  <button type="button" className="btn btn-secondary" onClick={v.copyLink}>Copy link</button>
+                  <p className="small copy-msg" role="status" aria-live="polite">{v.linkMsg}</p>
+                </div>
+              </div>
+            </section>
+          ) : null}
           <nav className="ev-links s-body" aria-label="More">
             {v.isPrototype || v.isGuestView ? <button type="button" className="text-btn" onClick={v.editMyResponse}>Edit my response</button> : null}
             {v.isGuestView && v.canSwitchGuest ? <button type="button" className="text-btn text-btn-muted" onClick={v.switchGuest}>{v.switchLabel}</button> : null}
@@ -156,17 +167,6 @@ export default function EventPage({ v }: { v: any }) {
               </>
             ) : null}
           </nav>
-          {v.showInviteBottom ? (
-            <section className="glass f-invite ev-invite-bottom s-body" aria-label="Invite link">
-              <div className="f-invite-text">
-                <p className="f-link" ref={v.setLinkEl}>{v.shareLinkText}</p>
-                <div className="btn-row">
-                  <button type="button" className="btn btn-secondary" onClick={v.copyLink}>Copy link</button>
-                  <p className="small copy-msg" role="status" aria-live="polite">{v.linkMsg}</p>
-                </div>
-              </div>
-            </section>
-          ) : null}
         </div>
       </main>
     </>

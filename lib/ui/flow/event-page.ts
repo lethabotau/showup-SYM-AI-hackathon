@@ -120,8 +120,16 @@ export class EventPageMixin {
       resultsBestDate: best ? slotFromIso(best.date).short : '',
       resultsBestCount: best ? best.coming + (best.coming === 1 ? ' person could make this work.' : ' people could make this work.') : '',
       resultsRows: r && r.respondedCount > 0 ? rows : [],
-      showRespondents: !!r && s.mode === 'organiser' && Array.isArray(r.respondents) && r.respondents.length > 0,
-      respondentsLine: r && Array.isArray(r.respondents) ? 'Responded: ' + r.respondents.join(', ') : '',
+      // Silver circles like the example page: who has joined, and whether they've responded. Never their answers.
+      showPeople: !!r && Array.isArray(r.people) && r.people.length > 0,
+      resultsPeople: r && Array.isArray(r.people) ? r.people.map(function (p) {
+        return {
+          key: p.name, name: p.name, initial: p.name.charAt(0).toUpperCase(),
+          cls: 'av glass-silver lr-av' + (p.responded ? '' : ' is-waiting'),
+          tip: p.responded ? p.name : p.name + ' \u00b7 not replied yet',
+          aria: p.name + (p.responded ? ', has responded' : ', has not responded yet'),
+        };
+      }) : [],
     };
   }
 

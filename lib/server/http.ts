@@ -4,7 +4,7 @@ import { authoriseOrganiser, createEvent, deleteEvent, getPublicEvent, guestPath
 import { authenticateGuest, eventPeople, joinEvent, leaveEvent, loadOwnResponse, saveResponse } from './responses';
 import { interpretCondition, MAX_TEXT_CHARS, type InterpretationContext, type ModelTransport } from '../conditions/interpreter';
 import { castVote, closeNow, createProposal, getProposal, withdrawProposal, type Caller } from './proposals';
-import { computeResults, type OrganiserResultsDto, type ResultsDto } from './results';
+import { computeResults } from './results';
 import { validateCreateEvent } from './validate';
 
 export const MAX_BODY_BYTES = 16_384;
@@ -130,7 +130,7 @@ export async function handleGetOwnResponse(eventId: string, req: Request, getDb:
 }
 
 /**
- * Public aggregates for anyone with the event link; respondent names only for the organiser. A credential that is
+ * Public aggregates for anyone with the event link (names and whether each person has responded, never answers). A credential that is
  * neither this event's organiser token nor one of its guests is refused rather than downgraded.
  */
 export async function handleGetResults(eventId: string, req: Request, getDb: () => Db): Promise<Response> {
@@ -145,10 +145,7 @@ export async function handleGetResults(eventId: string, req: Request, getDb: () 
     }
     const event = access.status === 'ok' ? access.event : await getPublicEvent(db, eventId);
     if (!event) return json(404, { error: 'not_found' });
-    const { results, respondents } = await computeResults(db, event);
-    const body: ResultsDto | OrganiserResultsDto = access.status === 'ok'
-      ? { eventId: results.eventId, respondedCount: results.respondedCount, best: results.best, days: results.days, slots: results.slots, respondents }
-      : { eventId: results.eventId, respondedCount: results.respondedCount, best: results.best, days: results.days, slots: results.slots };
+    const body = await computeResults(db, event);
     return json(200, body);
   } catch (err) {
     return failure('get-results', err);

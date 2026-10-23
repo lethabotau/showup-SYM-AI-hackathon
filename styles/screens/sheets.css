@@ -93,7 +93,8 @@
      growth here) never stretches the shared rows and shifts the links and invite card on the left. */
   .ev-grid.is-full .ev-side.is-live{height:0;min-height:0;overflow:visible}
   .ev-grid.is-full .ev-links{grid-row:5}
-  .ev-grid.is-full .ev-invite-bottom{grid-row:6}
+  .ev-grid.is-full .ev-invite-bottom{grid-row:5}
+  .ev-grid.is-full .ev-invite-bottom + .ev-links{grid-row:6}
   .ev-actions{order:-1}
 }
 @media (prefers-reduced-motion:reduce){

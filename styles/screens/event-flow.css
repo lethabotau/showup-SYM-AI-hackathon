@@ -86,3 +86,10 @@
 .ev-actions.is-live{display:flex;flex-direction:column;gap:var(--space-6)}
 .ev-actions.is-live .btn-row{gap:var(--space-4) var(--space-5)}
 .round-withdraw{min-height:32px;padding:0;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+
+.av.is-waiting{opacity:.55}
+.lr-people{display:flex;flex-direction:column;gap:var(--space-2)}
+.lr-people .avatars{padding-top:36px}
+
+/* Response circles are hover-only: nothing happens on click */
+.lr-av{cursor:default}
