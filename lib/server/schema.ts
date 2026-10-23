@@ -114,6 +114,39 @@ const TABLES: Record<string, string> = {
     CONSTRAINT conditions_readback_length CHECK (char_length(btrim(readback)) BETWEEN 1 AND 500),
     CONSTRAINT conditions_source CHECK (source IN ('llm', 'fallback'))
   )`,
+  proposals: `CREATE TABLE IF NOT EXISTS proposals (
+    id text NOT NULL,
+    event_id text NOT NULL,
+    date date NOT NULL,
+    start_min integer NOT NULL,
+    end_min integer NOT NULL,
+    deadline date,
+    min_attendees integer NOT NULL,
+    status text NOT NULL DEFAULT 'open',
+    confirmed_count integer,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    closed_at timestamptz,
+    CONSTRAINT proposals_pkey PRIMARY KEY (id),
+    CONSTRAINT proposals_id_event_unique UNIQUE (id, event_id),
+    CONSTRAINT proposals_event_fk FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+    CONSTRAINT proposals_day_fk FOREIGN KEY (event_id, date) REFERENCES event_days (event_id, date) ON DELETE CASCADE,
+    CONSTRAINT proposals_id_format CHECK (id ~ ${ID}),
+    CONSTRAINT proposals_minutes CHECK (start_min >= 0 AND end_min > start_min AND end_min <= 2880),
+    CONSTRAINT proposals_min_attendees CHECK (min_attendees >= 2),
+    CONSTRAINT proposals_status CHECK (status IN ('open', 'confirmed', 'failed'))
+  )`,
+  proposal_votes: `CREATE TABLE IF NOT EXISTS proposal_votes (
+    proposal_id text NOT NULL,
+    participant_id text NOT NULL,
+    event_id text NOT NULL,
+    vote text NOT NULL,
+    voted_at timestamptz NOT NULL DEFAULT now(),
+    confirmed boolean,
+    CONSTRAINT proposal_votes_pkey PRIMARY KEY (proposal_id, participant_id),
+    CONSTRAINT proposal_votes_proposal_fk FOREIGN KEY (proposal_id, event_id) REFERENCES proposals (id, event_id) ON DELETE CASCADE,
+    CONSTRAINT proposal_votes_participant_fk FOREIGN KEY (participant_id, event_id) REFERENCES participants (id, event_id) ON DELETE CASCADE,
+    CONSTRAINT proposal_votes_vote CHECK (vote IN ('in', 'out'))
+  )`,
 };
 
 const INDEXES: Record<string, { table: string; columns: string }> = {
@@ -123,7 +156,12 @@ const INDEXES: Record<string, { table: string; columns: string }> = {
   day_willingness_day_idx: { table: 'day_willingness', columns: 'event_id, date' },
   conditions_participant_idx: { table: 'conditions', columns: 'participant_id, event_id, date' },
   conditions_day_idx: { table: 'conditions', columns: 'event_id, date' },
+  proposals_event_idx: { table: 'proposals', columns: 'event_id' },
+  proposal_votes_participant_idx: { table: 'proposal_votes', columns: 'participant_id, event_id' },
 };
+
+/** One open proposal per event. Partial, so it sits outside the drift-checked INDEXES map. */
+const ONE_OPEN_PROPOSAL = `CREATE UNIQUE INDEX IF NOT EXISTS proposals_one_open_idx ON proposals (event_id) WHERE status = 'open'`;
 
 type Col = [type: string, nullable: boolean, extra?: 'generated' | 'identity'];
 
@@ -171,6 +209,22 @@ const EXPECTED: Record<string, { columns: Record<string, Col>; constraints: stri
     },
     constraints: ['conditions_pkey', 'conditions_participant_fk', 'conditions_day_fk', 'conditions_type', 'conditions_payload_type',
       'conditions_payload_shape', 'conditions_readback_length', 'conditions_source'],
+  },
+  proposals: {
+    columns: {
+      id: ['text', false], event_id: ['text', false], date: ['date', false], start_min: ['integer', false], end_min: ['integer', false],
+      deadline: ['date', true], min_attendees: ['integer', false], status: ['text', false], confirmed_count: ['integer', true],
+      created_at: ['timestamp with time zone', false], closed_at: ['timestamp with time zone', true],
+    },
+    constraints: ['proposals_pkey', 'proposals_id_event_unique', 'proposals_event_fk', 'proposals_day_fk', 'proposals_id_format',
+      'proposals_minutes', 'proposals_min_attendees', 'proposals_status'],
+  },
+  proposal_votes: {
+    columns: {
+      proposal_id: ['text', false], participant_id: ['text', false], event_id: ['text', false], vote: ['text', false],
+      voted_at: ['timestamp with time zone', false], confirmed: ['boolean', true],
+    },
+    constraints: ['proposal_votes_pkey', 'proposal_votes_proposal_fk', 'proposal_votes_participant_fk', 'proposal_votes_vote'],
   },
 };
 
@@ -249,6 +303,7 @@ function setupStatements(): Statement[] {
     { text: 'SELECT pg_advisory_xact_lock($1::bigint)', params: [LOCK_KEY] },
     ...Object.values(TABLES).map((text) => ({ text, params: [] })),
     ...Object.entries(INDEXES).map(([name, { table, columns }]) => ({ text: `CREATE INDEX IF NOT EXISTS ${name} ON ${table} (${columns})`, params: [] })),
+    { text: ONE_OPEN_PROPOSAL, params: [] },
     { text: 'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING', params: [SCHEMA_VERSION] },
   ];
 }

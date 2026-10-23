@@ -8,6 +8,7 @@ import EventPage from './screens/EventPage';
 import ConditionsSheet from './sheets/ConditionsSheet';
 import ProposeSheet from './sheets/ProposeSheet';
 import ConfirmSheet from './sheets/ConfirmSheet';
+import ProposeTimeSheet from './sheets/ProposeTimeSheet';
 
 export default function FlowView({ v }: { v: any }) {
   return (
@@ -22,6 +23,7 @@ export default function FlowView({ v }: { v: any }) {
         {v.isEvent ? <EventPage v={v} /> : null}
         {v.sheetOpen ? <ConditionsSheet v={v} /> : null}
         {v.proposeOpen ? <ProposeSheet v={v} /> : null}
+        {v.roundSheetOpen ? <ProposeTimeSheet v={v} /> : null}
         {v.confirmOpen ? <ConfirmSheet v={v} /> : null}
       </div>
     </div>

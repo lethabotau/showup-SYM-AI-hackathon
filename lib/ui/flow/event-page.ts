@@ -70,6 +70,7 @@ export class EventPageMixin {
       self.pollTimer = setTimeout(function () { self.pollTimer = null; if (gen === self.pollGen) self.pollResults(gen, eventId); }, RESULTS_POLL_MS);
     };
     var failed = function () { if (gen !== self.pollGen) return; if (!self.state.resultsError) self.setState({ resultsError: true }); next(); };
+    if (typeof this.refreshRound === 'function') this.refreshRound(gen, eventId);
     fetchResults(eventId, this.organiserToken()).then(function (r) {
       if (gen !== self.pollGen) return;
       if (!r.ok && r.status === 404 && !self.state.confirmBusy) {
@@ -153,11 +154,11 @@ export class EventPageMixin {
     var live = persisted && s.results && s.results.eventId === ev.id ? s.results : null;
     var legacyCount = orgView && nResp === 0 ? 'No responses yet.' : orgView && nResp <= 1 ? 'Just you so far.' : nResp + (nResp === 1 ? ' response' : ' responses');
     return Object.assign(this.resultsVals(s), {
-      evStatusLabel: orgView && prop ? 'Time proposed (prototype)' : 'Collecting responses',
-      evGridCls: 'ev-grid ' + (showResults && orgView ? 'is-full ' : '') + this.screenClsOf(s),
+      evStatusLabel: persisted ? this.roundStatusLabel(s) : orgView && prop ? 'Time proposed (prototype)' : 'Collecting responses',
+      evGridCls: 'ev-grid ' + ((showResults || persisted) && orgView ? 'is-full ' : '') + this.screenClsOf(s),
       countLine: !persisted ? legacyCount : live ? live.respondedCount + (live.respondedCount === 1 ? ' response' : ' responses') : '',
       showGuestStatus: guestView, guestStatus: persisted && !s.justSaved ? "You've responded." : 'Response saved.',
-      showFresh: orgView && (persisted || nResp <= 1), showResults: showResults, showOrgSide: orgView && !persisted && nResp >= 2,
+      showFresh: orgView && !persisted && nResp <= 1, showInviteBottom: orgView && persisted, showResults: showResults, showOrgSide: orgView && (persisted || nResp >= 2),
       isOrgView: orgView, isGuestView: guestView,
       hasBest: !!best, noBest: !best,
       bestDay: best ? best.slot.day : '', bestTime: bw ? fmtCompact(bw.s, bw.e) : '',

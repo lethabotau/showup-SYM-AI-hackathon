@@ -4,6 +4,7 @@ import ProposalNotice from '../../shared/ProposalNotice';
 import ReminderPanel from '../../shared/ReminderPanel';
 import DotRows from '../../shared/DotRows';
 import LiveResults from '../../shared/LiveResults';
+import RoundCard from '../../shared/RoundCard';
 import { Fragment } from 'react';
 
 export default function EventPage({ v }: { v: any }) {
@@ -29,6 +30,7 @@ export default function EventPage({ v }: { v: any }) {
             </>
           ) : null}
           <LiveResults v={v} />
+          <RoundCard v={v} />
           {v.showFresh ? (
             <>
               <section className="glass f-invite s-body" aria-label="Invite link">
@@ -90,7 +92,8 @@ export default function EventPage({ v }: { v: any }) {
           ) : null}
           {v.showOrgSide ? (
             <>
-              <aside className="ev-side s-body" aria-label="Organiser tools">
+              <aside className={"ev-side s-body" + (v.isPersisted ? " is-live" : "")} aria-label="Organiser tools">
+                {v.isPrototype ? (
                 <section className="glass e-share" aria-label="Event link">
                   <div className="share-text">
                     <p className="share-link" title={v.shareLinkTitle} ref={v.setLinkEl}>{v.shareLinkText}</p>
@@ -104,11 +107,14 @@ export default function EventPage({ v }: { v: any }) {
                   </svg>
 ) : null}
                 </section>
-                <section className="ev-actions" aria-label="Organiser actions">
+                ) : null}
+                <section className={"ev-actions" + (v.isPersisted ? " is-live" : "")} aria-label="Organiser actions">
                   <div className="btn-row">
                     {v.isPrototype ? <button type="button" className="btn btn-primary" onClick={v.openPropose}>{v.proposeLabel}</button> : null}
+                    {v.roundCanPropose ? <button type="button" className="btn btn-primary" onClick={v.openRoundSheet}>{v.roundProposeLabel}</button> : null}
                     <button type="button" className="btn btn-secondary" onClick={v.toggleReminder} aria-expanded={v.reminderExpanded}>Draft reminder</button>
                   </div>
+                  <RoundCard v={v} side />
                   {v.hasProposal ? (
                     <>
                       <ProposalNotice v={v} />
@@ -150,6 +156,17 @@ export default function EventPage({ v }: { v: any }) {
               </>
             ) : null}
           </nav>
+          {v.showInviteBottom ? (
+            <section className="glass f-invite ev-invite-bottom s-body" aria-label="Invite link">
+              <div className="f-invite-text">
+                <p className="f-link" ref={v.setLinkEl}>{v.shareLinkText}</p>
+                <div className="btn-row">
+                  <button type="button" className="btn btn-secondary" onClick={v.copyLink}>Copy link</button>
+                  <p className="small copy-msg" role="status" aria-live="polite">{v.linkMsg}</p>
+                </div>
+              </div>
+            </section>
+          ) : null}
         </div>
       </main>
     </>

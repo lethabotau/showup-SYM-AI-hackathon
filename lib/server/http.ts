@@ -3,6 +3,7 @@ import { isUnavailable, logDbError, pgCode, type Db } from './db';
 import { authoriseOrganiser, createEvent, deleteEvent, getPublicEvent, guestPath, organiserPath } from './events';
 import { authenticateGuest, eventPeople, joinEvent, leaveEvent, loadOwnResponse, saveResponse } from './responses';
 import { interpretCondition, MAX_TEXT_CHARS, type InterpretationContext, type ModelTransport } from '../conditions/interpreter';
+import { castVote, closeNow, createProposal, getProposal, withdrawProposal, type Caller } from './proposals';
 import { computeResults, type OrganiserResultsDto, type ResultsDto } from './results';
 import { validateCreateEvent } from './validate';
 
@@ -239,5 +240,95 @@ export async function handleLeaveEvent(eventId: string, req: Request, getDb: () 
     return json(200, { ok: true });
   } catch (err) {
     return failure('leave-event', err);
+  }
+}
+
+// ---- Propose a time, vote, confirm ------------------------------------------------------------------------------
+
+/** Same body for everyone; a guest also gets their own vote. A credential that is neither organiser nor guest is refused. */
+export async function handleGetProposal(eventId: string, req: Request, getDb: () => Db, now: Date = new Date()): Promise<Response> {
+  const cred = guestCredential(req);
+  try {
+    const db = getDb();
+    const event = await getPublicEvent(db, eventId);
+    if (!event) return error(404, 'not_found', "We couldn't find that event.");
+    let caller: Caller = { kind: 'anon' };
+    if (req.headers.get('authorization') !== null) {
+      if ((await authoriseOrganiser(db, eventId, cred)).status === 'ok') caller = { kind: 'organiser' };
+      else {
+        const g = cred ? await authenticateGuest(db, eventId, cred) : null;
+        if (!g || g.status !== 'ok') return error(403, 'forbidden', 'Your access is not valid.');
+        caller = { kind: 'guest', id: g.participant.id };
+      }
+    }
+    return json(200, { proposal: await getProposal(db, event, caller, now) });
+  } catch (err) {
+    return failure('get-proposal', err);
+  }
+}
+
+export async function handleCreateProposal(eventId: string, req: Request, getDb: () => Db, now: Date = new Date()): Promise<Response> {
+  const parsed = await readJson(req);
+  if ('res' in parsed) return parsed.res;
+  try {
+    const db = getDb();
+    const access = await authoriseOrganiser(db, eventId, guestCredential(req));
+    if (access.status === 'not_found') return error(404, 'not_found', "We couldn't find that event.");
+    if (access.status === 'forbidden') return error(403, 'forbidden', 'Only the organiser can propose a time.');
+    const b = (parsed.body ?? {}) as Record<string, unknown>;
+    const result = await createProposal(db, access.event, { date: b.date, startMin: b.startMin, endMin: b.endMin, deadline: b.deadline, minAttendees: b.minAttendees }, now);
+    if (result.status === 'invalid') return error(400, 'invalid_input', result.message, result.field);
+    if (result.status === 'conflict') return error(409, 'proposal_exists', 'A time is already proposed or confirmed for this event.');
+    return json(201, { proposal: await getProposal(db, access.event, { kind: 'organiser' }, now) });
+  } catch (err) {
+    return failure('create-proposal', err);
+  }
+}
+
+export async function handleCloseProposal(eventId: string, req: Request, getDb: () => Db, now: Date = new Date()): Promise<Response> {
+  try {
+    const db = getDb();
+    const access = await authoriseOrganiser(db, eventId, guestCredential(req));
+    if (access.status === 'not_found') return error(404, 'not_found', "We couldn't find that event.");
+    if (access.status === 'forbidden') return error(403, 'forbidden', 'Only the organiser can close the poll.');
+    if ((await closeNow(db, access.event)) === 'none') return error(409, 'no_open_proposal', 'There is no open poll to close.');
+    return json(200, { proposal: await getProposal(db, access.event, { kind: 'organiser' }, now) });
+  } catch (err) {
+    return failure('close-proposal', err);
+  }
+}
+
+/** Organiser-only: cancels the proposed time (open or confirmed) and clears its answers. */
+export async function handleWithdrawProposal(eventId: string, req: Request, getDb: () => Db): Promise<Response> {
+  try {
+    const db = getDb();
+    const access = await authoriseOrganiser(db, eventId, guestCredential(req));
+    if (access.status === 'not_found') return error(404, 'not_found', "We couldn't find that event.");
+    if (access.status === 'forbidden') return error(403, 'forbidden', 'Only the organiser can cancel the proposed time.');
+    await withdrawProposal(db, eventId);
+    return json(200, { proposal: null });
+  } catch (err) {
+    return failure('withdraw-proposal', err);
+  }
+}
+
+export async function handleVote(eventId: string, req: Request, getDb: () => Db, now: Date = new Date()): Promise<Response> {
+  const cred = guestCredential(req);
+  if (!cred) return error(401, 'unauthorised', 'Sign in with your guest link first.');
+  const parsed = await readJson(req);
+  if ('res' in parsed) return parsed.res;
+  const vote = (parsed.body as { vote?: unknown } | null)?.vote;
+  if (vote !== 'in' && vote !== 'out') return error(400, 'invalid_input', 'Choose "I\'m in" or "Can\'t make it".', 'vote');
+  try {
+    const db = getDb();
+    const auth = await authenticateGuest(db, eventId, cred);
+    if (auth.status !== 'ok') return error(401, 'unauthorised', 'Your guest access is not valid.');
+    const event = await getPublicEvent(db, eventId);
+    if (!event) return error(404, 'not_found', "We couldn't find that event.");
+    if ((await castVote(db, event, auth.participant.id, vote, now)) === 'closed') return error(409, 'poll_closed', 'This poll has closed.');
+    return json(200, { proposal: await getProposal(db, event, { kind: 'guest', id: auth.participant.id }, now) });
+  } catch (err) {
+    if (pgCode(err) === '23503') return error(401, 'unauthorised', 'Your guest access is not valid.');
+    return failure('vote', err);
   }
 }
