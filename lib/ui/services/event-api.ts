@@ -58,3 +58,26 @@ export async function saveOwnResponse(eventId: string, credential: string, body:
   const err = j && j.error;
   return { ok: false, message: (err && err.message) || "We couldn't save your response.", field: err && err.field };
 }
+
+type DeleteResult = { ok: true } | { ok: false; status: number; message: string };
+
+async function deleteWithBearer(url: string, token: string, fallback: string): Promise<DeleteResult> {
+  try {
+    const res = await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+    if (res.ok) return { ok: true };
+    const j = await res.json().catch(() => null);
+    return { ok: false, status: res.status, message: (j && j.error && j.error.message) || fallback };
+  } catch {
+    return { ok: false, status: 0, message: fallback };
+  }
+}
+
+/** Organiser cancels the event for everyone. */
+export function cancelStoredEvent(eventId: string, organiserToken: string): Promise<DeleteResult> {
+  return deleteWithBearer(`/api/events/${encodeURIComponent(eventId)}`, organiserToken, "We couldn't cancel this event. Try again.");
+}
+
+/** Guest removes themselves and their availability. */
+export function leaveStoredEvent(eventId: string, credential: string): Promise<DeleteResult> {
+  return deleteWithBearer(`/api/events/${encodeURIComponent(eventId)}/response`, credential, "We couldn't remove you from this event. Try again.");
+}

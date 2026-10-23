@@ -14,7 +14,7 @@ export function baseState() {
     avail: {}, ranges: {}, openWheel: {}, will: {}, conds: {}, condText: {}, applied: {},
     errors: {}, formError: '', noneWork: false, phase: 'editing', dirty: false,
     sheet: null, sheetClosing: false, liveMsg: '', linkMsg: '', remMsg: '', reminderOpen: false,
-    proposeOpen: false, proposeClosing: false, propForm: null, propError: '', activePerson: null,
+    proposeOpen: false, proposeClosing: false, confirmOpen: false, confirmClosing: false, confirmKind: '', confirmTarget: null, confirmBusy: false, confirmError: '', eventGone: false, propForm: null, propError: '', activePerson: null,
     myEvents: [], leaving: false, anim: ''
   };
 }

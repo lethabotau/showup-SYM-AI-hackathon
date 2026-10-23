@@ -1,7 +1,7 @@
 // Route handler logic, kept free of Next.js so it can be tested against an isolated database.
-import { isUnavailable, logDbError, type Db } from './db';
-import { authoriseOrganiser, createEvent, getPublicEvent, guestPath, organiserPath } from './events';
-import { authenticateGuest, eventPeople, joinEvent, loadOwnResponse, saveResponse } from './responses';
+import { isUnavailable, logDbError, pgCode, type Db } from './db';
+import { authoriseOrganiser, createEvent, deleteEvent, getPublicEvent, guestPath, organiserPath } from './events';
+import { authenticateGuest, eventPeople, joinEvent, leaveEvent, loadOwnResponse, saveResponse } from './responses';
 import { interpretCondition, MAX_TEXT_CHARS, type InterpretationContext, type ModelTransport } from '../conditions/interpreter';
 import { computeResults, type OrganiserResultsDto, type ResultsDto } from './results';
 import { validateCreateEvent } from './validate';
@@ -206,6 +206,38 @@ export async function handleSaveResponse(eventId: string, req: Request, getDb: (
     if (result.status === 'invalid') return error(400, 'invalid_input', result.error.message, result.error.field);
     return json(200, result.response);
   } catch (err) {
+    // The guest left (or the event was cancelled) while this save was in flight.
+    if (pgCode(err) === '23503') return error(401, 'unauthorised', 'Your guest access is not valid.');
     return failure('save-response', err);
+  }
+}
+
+/** Organiser-only: cancels the event for everyone. */
+export async function handleDeleteEvent(eventId: string, req: Request, getDb: () => Db): Promise<Response> {
+  const cred = guestCredential(req);
+  try {
+    const db = getDb();
+    const access = await authoriseOrganiser(db, eventId, cred);
+    if (access.status === 'not_found') return error(404, 'not_found', "We couldn't find that event.");
+    if (access.status === 'forbidden') return error(403, 'forbidden', 'Only the organiser can cancel this event.');
+    await deleteEvent(db, eventId);
+    return json(200, { ok: true });
+  } catch (err) {
+    return failure('delete-event', err);
+  }
+}
+
+/** Guest-only: removes the caller and their availability from the event. */
+export async function handleLeaveEvent(eventId: string, req: Request, getDb: () => Db): Promise<Response> {
+  const cred = guestCredential(req);
+  if (!cred) return error(401, 'unauthorised', 'Sign in with your guest link first.');
+  try {
+    const db = getDb();
+    const auth = await authenticateGuest(db, eventId, cred);
+    if (auth.status !== 'ok') return error(401, 'unauthorised', 'Your guest access is not valid.');
+    await leaveEvent(db, eventId, auth.participant.id);
+    return json(200, { ok: true });
+  } catch (err) {
+    return failure('leave-event', err);
   }
 }

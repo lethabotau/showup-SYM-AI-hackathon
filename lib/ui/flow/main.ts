@@ -15,6 +15,7 @@ import { RespondMixin } from './respond';
 import { ConditionsSheetMixin } from './conditions-sheet';
 import { EventPageMixin } from './event-page';
 import { ProposeSheetMixin } from './propose-sheet';
+import { ConfirmSheetMixin } from './confirm-sheet';
 /* Entry point for Main.dc.html: builds the page's Component class and hands it to standalone-support.js. */
 export var DCMeta = {"startAt":{"editor":"enum","options":["landing","create","respond","fresh","join","guest","participant"],"default":"landing","section":"Prototype"},"$preview":{"width":1440,"height":900}};
 
@@ -31,7 +32,7 @@ export class Component extends DCLogic {
           if (saved && saved.family === FAMILY && saved.screen) {
             window.sessionStorage.removeItem(STORE_KEY);
             delete saved.family;
-            st = Object.assign(baseState(), saved, { sheet: null, sheetClosing: false, proposeOpen: false, proposeClosing: false, linkMsg: '', remMsg: '', liveMsg: '', leaving: false, anim: '', myEvents: loadMyEvents() || [] });
+            st = Object.assign(baseState(), saved, { sheet: null, sheetClosing: false, proposeOpen: false, proposeClosing: false, confirmOpen: false, confirmClosing: false, linkMsg: '', remMsg: '', liveMsg: '', leaving: false, anim: '', myEvents: loadMyEvents() || [] });
           }
         }
       } catch (e) {}
@@ -81,6 +82,7 @@ export class Component extends DCLogic {
     }
     if (!prevState.sheet && this.state.sheet && this.sheetEl) { try { this.sheetEl.focus({ preventScroll: true }); } catch (e) {} }
     if (!prevState.proposeOpen && this.state.proposeOpen && this.propEl) { try { this.propEl.focus({ preventScroll: true }); } catch (e) {} }
+    if (!prevState.confirmOpen && this.state.confirmOpen && this.confirmEl) { try { this.confirmEl.focus({ preventScroll: true }); } catch (e) {} }
     if (prevState.phase !== 'saved' && this.state.phase === 'saved' && this.state.screen === 'respond' && this.savedEl) {
       try { this.savedEl.focus({ preventScroll: true }); this.savedEl.scrollIntoView({ block: 'center', behavior: this.motion() }); } catch (e) {}
     }
@@ -88,4 +90,4 @@ export class Component extends DCLogic {
     this.syncResultsPolling();
   }
   }
-mix(Component, [AppMixin, LandingMixin, CreateMixin, JoinMixin, RespondMixin, ConditionsSheetMixin, EventPageMixin, ProposeSheetMixin]);
+mix(Component, [AppMixin, LandingMixin, CreateMixin, JoinMixin, RespondMixin, ConditionsSheetMixin, EventPageMixin, ProposeSheetMixin, ConfirmSheetMixin]);

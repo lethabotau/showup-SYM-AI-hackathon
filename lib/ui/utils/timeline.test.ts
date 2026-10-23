@@ -18,12 +18,15 @@ describe('timeline pointer mapping', () => {
     expect(pointerMinute(50, 100, 0, evening)).toBe(h(17));
   });
 
-  it('snaps to whole hours and window edges, ties going to the earlier candidate', () => {
-    expect(snapMinute(h(19.4), evening)).toBe(h(19));
-    expect(snapMinute(h(19.6), evening)).toBe(h(20));
-    expect(snapMinute(h(19.5), evening)).toBe(h(19));
+  it('snaps to half hours and window edges, ties going to the earlier candidate', () => {
+    expect(snapMinute(h(19.2), evening)).toBe(h(19));
+    expect(snapMinute(h(19.3), evening)).toBe(h(19.5));
+    expect(snapMinute(h(19.5), evening)).toBe(h(19.5));
+    expect(snapMinute(h(19.75), evening)).toBe(h(19.5));
+    expect(snapMinute(h(19.76), evening)).toBe(h(20));
     expect(snapMinute(h(17.25), { s: h(17.25), e: h(20) })).toBe(h(17.25));
-    expect(snapMinute(h(24.6), late)).toBe(h(25));
+    expect(snapMinute(h(24.6), late)).toBe(h(24.5));
+    expect(snapMinute(h(24.9), late)).toBe(h(25));
   });
 });
 

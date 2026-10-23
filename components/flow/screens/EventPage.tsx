@@ -147,6 +147,7 @@ export default function EventPage({ v }: { v: any }) {
             {v.isGuestView ? (
               <>
                 <button type="button" className="text-btn" onClick={v.goHome}>Plan your own</button>
+                {v.showLeaveEvent ? <button type="button" className="text-btn text-btn-muted" onClick={v.openEventClose}>Leave event</button> : null}
               </>
             ) : null}
           </nav>

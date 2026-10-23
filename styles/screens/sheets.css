@@ -104,3 +104,10 @@
   ::view-transition-new(root),::view-transition-new(su-title){animation:fade-in 150ms linear both}
   ::view-transition-group(su-title){animation:none}
 }
+
+/* Event close (cancel / leave) */
+.ev-close{position:absolute;z-index:2;width:28px;height:28px;padding:0;border:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.75);color:var(--text-muted);cursor:pointer;transition:color var(--motion-fast) var(--ease-out),background var(--motion-fast) var(--ease-out)}
+.ev-close::before{content:"";position:absolute;inset:-8px}
+.ev-close:hover{background:#FFFFFF;color:var(--red-button)}
+.ev-close:focus-visible{outline:2px solid #333333;outline-offset:2px}
+.confirm-sheet .btn:disabled{opacity:.6;cursor:default}

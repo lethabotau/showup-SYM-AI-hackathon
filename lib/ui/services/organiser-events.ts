@@ -28,3 +28,11 @@ export function saveOrganiserEvent(entry: OrganiserEventEntry): void {
     /* storage unavailable */
   }
 }
+
+export function removeOrganiserEvent(eventId: string): void {
+  try {
+    localStorage.setItem(ORGANISER_EVENTS_KEY, JSON.stringify(loadOrganiserEvents().filter((e) => e.eventId !== eventId)));
+  } catch {
+    /* storage unavailable */
+  }
+}

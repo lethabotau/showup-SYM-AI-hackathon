@@ -40,11 +40,16 @@ export default function Landing({ v }: { v: any }) {
                   <h2 id="my-h" className="label">Your events</h2>
                   <div className="my-list">
                     {(v.myEvents || []).map((ev: any) => (
-                      <a key={ev.key} className="my-row glass-control" href={ev.href}>
-                        <span className="my-name">{ev.name}</span>
-                        <span className="my-role">{ev.roleLabel}</span>
-                        <span className="my-status">{ev.status}</span>
-                      </a>
+                      <div key={ev.key} className="my-item">
+                        <a className="my-row glass-control" href={ev.href}>
+                          <span className="my-name">{ev.name}</span>
+                          <span className="my-role">{ev.roleLabel}</span>
+                          <span className="my-status">{ev.status}</span>
+                        </a>
+                        <button type="button" className="ev-close my-close" onClick={ev.onCancel} aria-label={`Cancel ${ev.name}`} title="Cancel event">
+                          <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" /></svg>
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </section>

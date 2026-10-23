@@ -52,7 +52,7 @@ export class EventPageMixin {
   // generation, which stops the old loop and makes its late replies ignored. Called after every update.
   syncResultsPolling() {
     var s = this.state; var ev = s.event;
-    var key = ev && ev.persisted && (s.screen === 'event' || s.screen === 'join') ? ev.id + '|' + s.mode : null;
+    var key = ev && ev.persisted && !s.eventGone && (s.screen === 'event' || s.screen === 'join') ? ev.id + '|' + s.mode : null;
     if (key === this.pollKey) return;
     this.stopResultsPolling();
     this.pollKey = key;
@@ -72,6 +72,12 @@ export class EventPageMixin {
     var failed = function () { if (gen !== self.pollGen) return; if (!self.state.resultsError) self.setState({ resultsError: true }); next(); };
     fetchResults(eventId, this.organiserToken()).then(function (r) {
       if (gen !== self.pollGen) return;
+      if (!r.ok && r.status === 404 && !self.state.confirmBusy) {
+        // The organiser cancelled the event: stop polling and tell the person.
+        self.stopResultsPolling();
+        self.setState({ eventGone: true, confirmOpen: true, confirmClosing: false, confirmKind: 'gone', confirmBusy: false, confirmError: '' });
+        return;
+      }
       if (!r.ok || !r.body || r.body.eventId !== eventId) { failed(); return; }
       if (self.state.resultsError || JSON.stringify(r.body) !== JSON.stringify(self.state.results)) self.setState({ results: r.body, resultsError: false });
       next();
@@ -94,7 +100,7 @@ export class EventPageMixin {
         label: info.short + ' · ' + (b ? fmtCompact(b.startMin, b.endMin) : 'No time fits'),
         counts: b ? b.free + ' free · ' + b.coming + ' coming' + (b.maybe > 0 ? ' · ' + b.maybe + ' maybe' : '') : '',
         hasBar: !!b, freePct: b ? pct(b.free) : '0', comingPct: b ? pct(b.coming) : '0',
-        free: b ? b.free : 0, coming: b ? b.coming : 0, maybe: b ? b.maybe : 0,
+        free: b ? b.free : 0, coming: b ? b.coming : 0, maybe: b ? b.maybe : 0, names: b && Array.isArray(b.names) ? b.names : [],
         day: info.title, time: b ? fmtCompact(b.startMin, b.endMin) : 'No time fits',
         aria: b ? info.title + ': ' + b.free + ' free, ' + b.coming + ' coming' : info.title + ': no time fits',
       };

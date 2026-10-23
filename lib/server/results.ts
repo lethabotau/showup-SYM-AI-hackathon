@@ -6,18 +6,32 @@ import type { PublicEvent } from './events';
 import { loadEngineResponses, slotIdFor } from './responses';
 
 export interface ResultCounts { startMin: number; endMin: number; free: number; coming: number; maybe: number }
+/** The day's chosen window, plus who is free in it: coming first, then maybe, then the rest (one name per dot). */
+export interface DayBest extends ResultCounts { names: string[] }
 export interface ResultSlot extends ResultCounts { date: string }
 export interface ResultsDto {
   eventId: string;
   respondedCount: number;
   best: ResultSlot | null;
-  days: { date: string; best: ResultCounts | null }[];
+  days: { date: string; best: DayBest | null }[];
   slots: ResultSlot[];
 }
 export interface OrganiserResultsDto extends ResultsDto { respondents: string[] }
 
 const counts = (s: number, e: number, free: number, go: number, tentative: number): ResultCounts =>
   ({ startMin: s, endMin: e, free, coming: go, maybe: tentative });
+
+/** Names in dot order: the viable group, then tentative people, then everyone else who is free. */
+function dotNames(d: { viable: { id: string; who: string }[]; tentativeList: { id: string; who: string }[]; freeList: { id: string; who: string }[] }): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of [...d.viable, ...d.tentativeList, ...d.freeList]) {
+    if (seen.has(r.id)) continue;
+    seen.add(r.id);
+    out.push(r.who);
+  }
+  return out;
+}
 
 /** Aggregates plus respondent names (join order); the caller decides whether names may be returned. */
 export async function computeResults(db: Db, event: PublicEvent): Promise<{ results: ResultsDto; respondents: string[] }> {
@@ -33,7 +47,7 @@ export async function computeResults(db: Db, event: PublicEvent): Promise<{ resu
   const days = ranking.days.map((d, i) => ({
     date: dateOf(i),
     // The engine's chosen slot for the day; a day nobody is free for has no time that fits.
-    best: d.window && d.free > 0 ? counts(d.window.s, d.window.e, d.free, d.go, d.tentative) : null,
+    best: d.window && d.free > 0 ? { ...counts(d.window.s, d.window.e, d.free, d.go, d.tentative), names: dotNames(d) } : null,
   }));
   const slots = ranking.days.flatMap((d, i) => d.slots.map((t: TimeSlotStats) => ({ date: dateOf(i), ...counts(t.s, t.e, t.free, t.go, t.tentative) })));
   const b = ranking.best;

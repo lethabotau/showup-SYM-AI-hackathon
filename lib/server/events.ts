@@ -109,3 +109,8 @@ export async function authoriseOrganiser(db: Db, id: string, token: unknown): Pr
   if (!tokenMatches(token, found.tokenHash)) return { status: 'forbidden' };
   return { status: 'ok', event: found.event };
 }
+
+/** Cancels an event. Days, participants and every response cascade away with it. */
+export async function deleteEvent(db: Db, id: string): Promise<void> {
+  await db.query('DELETE FROM events WHERE id = $1', [id]);
+}

@@ -5,6 +5,9 @@ import { loadEventData } from '../services/storage';
 import { respondFor } from '../state';
 import { loadOrganiserEvents } from '../services/organiser-events';
 import { isoFromDate, slotFromIso } from '../utils/dates';
+function tokenFromAdminUrl(url) {
+  try { return new URL(url, 'http://local').searchParams.get('k'); } catch (e) { return null; }
+}
 /* Landing screen */
 export class LandingMixin {
   next() {
@@ -26,6 +29,7 @@ export class LandingMixin {
       var made = new Date(x.createdAt);
       return {
         key: x.eventId, name: x.title, href: x.adminUrl, roleLabel: 'Organising',
+        onCancel: function () { self.openConfirm('cancel', { id: x.eventId, token: tokenFromAdminUrl(x.adminUrl) }); },
         status: isNaN(made.getTime()) ? '' : 'Created ' + slotFromIso(isoFromDate(made)).short,
       };
     });
