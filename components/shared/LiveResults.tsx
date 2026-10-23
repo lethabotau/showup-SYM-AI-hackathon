@@ -7,17 +7,19 @@ function DotRow({ r }: { r: any }) {
   const coming = Math.min(Math.max(0, r.coming), free);
   const maybe = Math.min(Math.max(0, r.maybe), free - coming);
   const dots = Array.from({ length: free }, (_, i) => (i < coming ? 'is-on' : i < coming + maybe ? 'is-on lr-maybe' : ''));
-  const aria = `${r.day}, ${r.time}: ${coming} coming${maybe > 0 ? `, ${maybe} maybe` : ''}, ${free} free${r.isBest ? ', best' : ''}`;
+  const names: string[] = Array.isArray(r.names) ? r.names : [];
+  const aria = `${r.day}, ${r.time}: ${coming} coming${maybe > 0 ? `, ${maybe} maybe` : ''}, ${free} free${r.isBest ? ', best' : ''}${names.length ? `. ${names.join(', ')}` : ''}`;
   return (
     <li className="dr lr-dr" role="img" aria-label={aria}>
       <span className="dr-label" aria-hidden="true">
         <span className="dr-day">{r.day}</span>
         <span className="dr-time">{r.time}</span>
       </span>
-      <span className="dr-dots" aria-hidden="true">
+      <span className="dr-dots">
         {dots.map((on, i) => (
-          <span key={i} className="dot glass-silver">
+          <span key={i} className="dot glass-silver" tabIndex={names[i] ? 0 : undefined}>
             <span className={'dot-red glass-red ' + on} />
+            {names[i] ? <span className="dot-tip">{names[i]}</span> : null}
           </span>
         ))}
       </span>

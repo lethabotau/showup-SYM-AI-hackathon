@@ -86,7 +86,7 @@ describe('canonical demo through persistence (PRODUCT-RULES §8)', () => {
     expect(summary(stage3)).toEqual({ days: [[FRI, 8, 4], [SAT, 6, 6]], best: SAT });
     expect(stage3.best).toEqual({ date: SAT, startMin: h(19), endMin: h(22), free: 6, coming: 6, maybe: 0 });
     // Friday still has everyone free; it loses on who would actually come.
-    expect(stage3.days[0].best).toEqual({ startMin: h(19), endMin: h(22), free: 8, coming: 4, maybe: 0 });
+    expect(stage3.days[0].best).toMatchObject({ startMin: h(19), endMin: h(22), free: 8, coming: 4, maybe: 0 });
 
     const rows = await t.db.query<{ n: number; c: number }>(
       `SELECT (SELECT count(*) FROM ranges WHERE participant_id = $1)::int AS n, (SELECT count(*) FROM conditions WHERE participant_id = $1)::int AS c`, [ellaId]);
@@ -108,8 +108,8 @@ describe('results come from C8', () => {
     const ev = (await getPublicEvent(t.db, id))!;
     const ranking = rankSlots({ slots: [{ id: slotIdFor(FRI), iso: FRI, win: { s: h(17), e: h(23) } }], win: { s: h(17), e: h(23) }, duration: 120, responses: await loadEngineResponses(t.db, id) });
     const day = ranking.days[0]!;
-    expect(r.days[0].best).toEqual({ startMin: day.window!.s, endMin: day.window!.e, free: day.free, coming: day.go, maybe: day.tentative });
-    expect(r.days[0].best).toEqual({ startMin: h(20), endMin: h(22), free: 3, coming: 2, maybe: 1 });
+    expect(r.days[0].best).toMatchObject({ startMin: day.window!.s, endMin: day.window!.e, free: day.free, coming: day.go, maybe: day.tentative });
+    expect(r.days[0].best).toMatchObject({ startMin: h(20), endMin: h(22), free: 3, coming: 2, maybe: 1 });
     expect(r.slots).toEqual(day.slots.map((s) => ({ date: FRI, startMin: s.s, endMin: s.e, free: s.free, coming: s.go, maybe: s.tentative })));
     const sum = r.slots.reduce((n: number, s: any) => n + s.free, 0);
     expect(sum).toBeGreaterThan(r.days[0].best.free);
@@ -132,7 +132,7 @@ describe('results come from C8', () => {
     await save(id, await join(id, 'Solo'), [{ date: FRI, will: 'if', conds: [needs('Nobody')] }, { date: SAT, will: 'no' }]);
     const r = await dto(id);
     expect(r.best).toBeNull();
-    expect(r.days[0].best).toEqual({ startMin: h(19), endMin: h(22), free: 1, coming: 0, maybe: 0 });
+    expect(r.days[0].best).toMatchObject({ startMin: h(19), endMin: h(22), free: 1, coming: 0, maybe: 0 });
     expect(r.days[1].best).toBeNull();
   });
 });
@@ -156,11 +156,11 @@ describe('GET /results access and privacy', () => {
     expect(body.best === null || Object.keys(body.best).sort()).toEqual(body.best === null ? true : ['date', ...COUNTS].sort());
     for (const d of body.days) {
       expect(Object.keys(d).sort()).toEqual(['best', 'date']);
-      if (d.best) expect(Object.keys(d.best).sort()).toEqual([...COUNTS].sort());
+      if (d.best) expect(Object.keys(d.best).sort()).toEqual([...COUNTS, 'names'].sort());
     }
     for (const s of body.slots) expect(Object.keys(s).sort()).toEqual(['date', ...COUNTS].sort());
     const text = JSON.stringify(body);
-    for (const leak of ['Zed', 'Amy', 'Quiet', 'Yara', 'name:', 'secret plan', guest.split('.')[0], guest.split('.')[1], token, 'readback', 'viable', 'tentative', 'group', 'rounds']) {
+    for (const leak of ['Quiet', 'Yara', 'name:', 'secret plan', guest.split('.')[0], guest.split('.')[1], token, 'readback', 'viable', 'tentative', 'group', 'rounds']) {
       expect(text).not.toContain(leak);
     }
   }
@@ -173,6 +173,9 @@ describe('GET /results access and privacy', () => {
     expect(Object.keys(body).sort()).toEqual([...AGG].sort());
     expect(body.respondedCount).toBe(2);
     assertAggregateOnly(body);
+    // Names appear only as hover labels on a day's chosen window, one per free person, never on slots or elsewhere.
+    for (const d of body.days) if (d.best) expect(d.best.names).toHaveLength(d.best.free);
+    expect(body.slots.every((s: any) => !('names' in s))).toBe(true);
   });
 
   it('valid guest: same aggregate payload, no respondents', async () => {

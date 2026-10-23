@@ -100,7 +100,7 @@ export class EventPageMixin {
         label: info.short + ' · ' + (b ? fmtCompact(b.startMin, b.endMin) : 'No time fits'),
         counts: b ? b.free + ' free · ' + b.coming + ' coming' + (b.maybe > 0 ? ' · ' + b.maybe + ' maybe' : '') : '',
         hasBar: !!b, freePct: b ? pct(b.free) : '0', comingPct: b ? pct(b.coming) : '0',
-        free: b ? b.free : 0, coming: b ? b.coming : 0, maybe: b ? b.maybe : 0,
+        free: b ? b.free : 0, coming: b ? b.coming : 0, maybe: b ? b.maybe : 0, names: b && Array.isArray(b.names) ? b.names : [],
         day: info.title, time: b ? fmtCompact(b.startMin, b.endMin) : 'No time fits',
         aria: b ? info.title + ': ' + b.free + ' free, ' + b.coming + ' coming' : info.title + ': no time fits',
       };
