@@ -81,3 +81,43 @@ export function cancelStoredEvent(eventId: string, organiserToken: string): Prom
 export function leaveStoredEvent(eventId: string, credential: string): Promise<DeleteResult> {
   return deleteWithBearer(`/api/events/${encodeURIComponent(eventId)}/response`, credential, "We couldn't remove you from this event. Try again.");
 }
+
+// ---- Propose a time, vote, confirm -----------------------------------------------------------------------------
+
+export type ProposalResult = { ok: true; proposal: any } | { ok: false; status: number; message: string };
+
+async function proposalCall(url: string, init: RequestInit, token: string | null, fallback: string): Promise<ProposalResult> {
+  try {
+    const headers: Record<string, string> = { ...(init.body ? { 'Content-Type': 'application/json' } : {}) };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(url, { ...init, headers, cache: 'no-store' });
+    const j = await res.json().catch(() => null);
+    if (res.ok && j && 'proposal' in j) return { ok: true, proposal: j.proposal };
+    return { ok: false, status: res.status, message: (j && j.error && j.error.message) || fallback };
+  } catch {
+    return { ok: false, status: 0, message: fallback };
+  }
+}
+
+const proposalUrl = (eventId: string, tail = '') => `/api/events/${encodeURIComponent(eventId)}/proposal${tail}`;
+
+/** Organiser token or guest credential; the server returns the same body either way, plus the caller's own vote. */
+export function fetchProposal(eventId: string, token: string | null): Promise<ProposalResult> {
+  return proposalCall(proposalUrl(eventId), { method: 'GET' }, token, "Couldn't load the proposal.");
+}
+
+export function createProposal(eventId: string, organiserToken: string, body: unknown): Promise<ProposalResult> {
+  return proposalCall(proposalUrl(eventId), { method: 'POST', body: JSON.stringify(body) }, organiserToken, "We couldn't propose that time. Try again.");
+}
+
+export function closeProposal(eventId: string, organiserToken: string): Promise<ProposalResult> {
+  return proposalCall(proposalUrl(eventId, '/close'), { method: 'POST' }, organiserToken, "We couldn't close the poll. Try again.");
+}
+
+export function castVote(eventId: string, credential: string, vote: 'in' | 'out'): Promise<ProposalResult> {
+  return proposalCall(proposalUrl(eventId, '/vote'), { method: 'PUT', body: JSON.stringify({ vote }) }, credential, "We couldn't save your answer. Try again.");
+}
+
+export function withdrawProposal(eventId: string, organiserToken: string): Promise<ProposalResult> {
+  return proposalCall(proposalUrl(eventId), { method: 'DELETE' }, organiserToken, "We couldn't cancel the proposed time. Try again.");
+}

@@ -128,7 +128,7 @@ describe('results come from C8', () => {
 
   it('returns no recommendation when nobody would come, and no day result when nobody is free', async () => {
     const { id } = await newEvent();
-    expect(await dto(id)).toEqual({ eventId: id, respondedCount: 0, best: null, days: [{ date: FRI, best: null }, { date: SAT, best: null }], slots: expect.any(Array) });
+    expect(await dto(id)).toEqual({ eventId: id, respondedCount: 0, best: null, days: [{ date: FRI, best: null }, { date: SAT, best: null }], slots: expect.any(Array), people: expect.any(Array) });
     await save(id, await join(id, 'Solo'), [{ date: FRI, will: 'if', conds: [needs('Nobody')] }, { date: SAT, will: 'no' }]);
     const r = await dto(id);
     expect(r.best).toBeNull();
@@ -150,7 +150,7 @@ describe('GET /results access and privacy', () => {
     otherGuest = await join(other.id, 'Elsewhere');
   });
 
-  const AGG = ['eventId', 'respondedCount', 'best', 'days', 'slots'];
+  const AGG = ['eventId', 'respondedCount', 'best', 'days', 'slots', 'people'];
   const COUNTS = ['startMin', 'endMin', 'free', 'coming', 'maybe'];
   function assertAggregateOnly(body: any) {
     expect(body.best === null || Object.keys(body.best).sort()).toEqual(body.best === null ? true : ['date', ...COUNTS].sort());
@@ -160,7 +160,7 @@ describe('GET /results access and privacy', () => {
     }
     for (const s of body.slots) expect(Object.keys(s).sort()).toEqual(['date', ...COUNTS].sort());
     const text = JSON.stringify(body);
-    for (const leak of ['Quiet', 'Yara', 'name:', 'secret plan', guest.split('.')[0], guest.split('.')[1], token, 'readback', 'viable', 'tentative', 'group', 'rounds']) {
+    for (const leak of [ 'Yara', 'name:', 'secret plan', guest.split('.')[0], guest.split('.')[1], token, 'readback', 'viable', 'tentative', 'group', 'rounds']) {
       expect(text).not.toContain(leak);
     }
   }
@@ -173,12 +173,14 @@ describe('GET /results access and privacy', () => {
     expect(Object.keys(body).sort()).toEqual([...AGG].sort());
     expect(body.respondedCount).toBe(2);
     assertAggregateOnly(body);
+    // Who joined and whether they responded (names only, join order); never answers or conditions.
+    expect(body.people).toEqual([{ name: 'Zed', responded: true }, { name: 'Quiet', responded: false }, { name: 'Amy', responded: true }]);
     // Names appear only as hover labels on a day's chosen window, one per free person, never on slots or elsewhere.
     for (const d of body.days) if (d.best) expect(d.best.names).toHaveLength(d.best.free);
     expect(body.slots.every((s: any) => !('names' in s))).toBe(true);
   });
 
-  it('valid guest: same aggregate payload, no respondents', async () => {
+  it('valid guest: the same payload as anonymous', async () => {
     const res = await get(id, `Bearer ${guest}`);
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -187,15 +189,13 @@ describe('GET /results access and privacy', () => {
     expect(body).toEqual(await dto(id));
   });
 
-  it('organiser: aggregates plus names of people who responded, in join order', async () => {
+  it('organiser: the same public payload (names are not an organiser privilege any more)', async () => {
     const res = await get(id, `Bearer ${token}`);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(Object.keys(body).sort()).toEqual([...AGG, 'respondents'].sort());
-    expect(body.respondents).toEqual(['Zed', 'Amy']);
-    const { respondents, ...rest } = body;
-    expect(respondents).toBeDefined();
-    assertAggregateOnly(rest);
+    expect(Object.keys(body).sort()).toEqual([...AGG].sort());
+    assertAggregateOnly(body);
+    expect(body).toEqual(await dto(id));
   });
 
   it.each([
@@ -220,10 +220,10 @@ describe('GET /results access and privacy', () => {
     }
   });
 
-  it('computeResults returns names separately, never inside the aggregates', async () => {
+  it('computeResults returns only aggregates plus the public people list', async () => {
     const ev = (await getPublicEvent(t.db, id))!;
-    const { results, respondents } = await computeResults(t.db, ev);
-    expect(respondents).toEqual(['Zed', 'Amy']);
+    const results = await computeResults(t.db, ev);
+    expect(results.people.map((p) => p.name)).toEqual(['Zed', 'Quiet', 'Amy']);
     assertAggregateOnly(results);
   });
 });

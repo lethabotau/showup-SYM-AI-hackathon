@@ -70,6 +70,7 @@ export class EventPageMixin {
       self.pollTimer = setTimeout(function () { self.pollTimer = null; if (gen === self.pollGen) self.pollResults(gen, eventId); }, RESULTS_POLL_MS);
     };
     var failed = function () { if (gen !== self.pollGen) return; if (!self.state.resultsError) self.setState({ resultsError: true }); next(); };
+    if (typeof this.refreshRound === 'function') this.refreshRound(gen, eventId);
     fetchResults(eventId, this.organiserToken()).then(function (r) {
       if (gen !== self.pollGen) return;
       if (!r.ok && r.status === 404 && !self.state.confirmBusy) {
@@ -119,8 +120,16 @@ export class EventPageMixin {
       resultsBestDate: best ? slotFromIso(best.date).short : '',
       resultsBestCount: best ? best.coming + (best.coming === 1 ? ' person could make this work.' : ' people could make this work.') : '',
       resultsRows: r && r.respondedCount > 0 ? rows : [],
-      showRespondents: !!r && s.mode === 'organiser' && Array.isArray(r.respondents) && r.respondents.length > 0,
-      respondentsLine: r && Array.isArray(r.respondents) ? 'Responded: ' + r.respondents.join(', ') : '',
+      // Silver circles like the example page: who has joined, and whether they've responded. Never their answers.
+      showPeople: !!r && Array.isArray(r.people) && r.people.length > 0,
+      resultsPeople: r && Array.isArray(r.people) ? r.people.map(function (p) {
+        return {
+          key: p.name, name: p.name, initial: p.name.charAt(0).toUpperCase(),
+          cls: 'av glass-silver lr-av' + (p.responded ? '' : ' is-waiting'),
+          tip: p.responded ? p.name : p.name + ' \u00b7 not replied yet',
+          aria: p.name + (p.responded ? ', has responded' : ', has not responded yet'),
+        };
+      }) : [],
     };
   }
 
@@ -153,11 +162,11 @@ export class EventPageMixin {
     var live = persisted && s.results && s.results.eventId === ev.id ? s.results : null;
     var legacyCount = orgView && nResp === 0 ? 'No responses yet.' : orgView && nResp <= 1 ? 'Just you so far.' : nResp + (nResp === 1 ? ' response' : ' responses');
     return Object.assign(this.resultsVals(s), {
-      evStatusLabel: orgView && prop ? 'Time proposed (prototype)' : 'Collecting responses',
-      evGridCls: 'ev-grid ' + (showResults && orgView ? 'is-full ' : '') + this.screenClsOf(s),
+      evStatusLabel: persisted ? this.roundStatusLabel(s) : orgView && prop ? 'Time proposed (prototype)' : 'Collecting responses',
+      evGridCls: 'ev-grid ' + ((showResults || persisted) && orgView ? 'is-full ' : '') + this.screenClsOf(s),
       countLine: !persisted ? legacyCount : live ? live.respondedCount + (live.respondedCount === 1 ? ' response' : ' responses') : '',
       showGuestStatus: guestView, guestStatus: persisted && !s.justSaved ? "You've responded." : 'Response saved.',
-      showFresh: orgView && (persisted || nResp <= 1), showResults: showResults, showOrgSide: orgView && !persisted && nResp >= 2,
+      showFresh: orgView && !persisted && nResp <= 1, showInviteBottom: orgView && persisted, showResults: showResults, showOrgSide: orgView && (persisted || nResp >= 2),
       isOrgView: orgView, isGuestView: guestView,
       hasBest: !!best, noBest: !best,
       bestDay: best ? best.slot.day : '', bestTime: bw ? fmtCompact(bw.s, bw.e) : '',

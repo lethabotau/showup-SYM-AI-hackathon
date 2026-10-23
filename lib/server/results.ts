@@ -15,8 +15,9 @@ export interface ResultsDto {
   best: ResultSlot | null;
   days: { date: string; best: DayBest | null }[];
   slots: ResultSlot[];
+  /** Everyone who has joined, in join order, and whether they've responded. Names are public (PRODUCT-RULES §7); answers are not. */
+  people: { name: string; responded: boolean }[];
 }
-export interface OrganiserResultsDto extends ResultsDto { respondents: string[] }
 
 const counts = (s: number, e: number, free: number, go: number, tentative: number): ResultCounts =>
   ({ startMin: s, endMin: e, free, coming: go, maybe: tentative });
@@ -33,8 +34,8 @@ function dotNames(d: { viable: { id: string; who: string }[]; tentativeList: { i
   return out;
 }
 
-/** Aggregates plus respondent names (join order); the caller decides whether names may be returned. */
-export async function computeResults(db: Db, event: PublicEvent): Promise<{ results: ResultsDto; respondents: string[] }> {
+/** Aggregates plus who has joined and who has responded (names only, join order). */
+export async function computeResults(db: Db, event: PublicEvent): Promise<ResultsDto> {
   const responses = await loadEngineResponses(db, event.id);
   const ev: EventData = {
     slots: event.days.map((d) => ({ id: slotIdFor(d.date), iso: d.date, win: { s: d.start, e: d.end } })),
@@ -54,8 +55,5 @@ export async function computeResults(db: Db, event: PublicEvent): Promise<{ resu
   const best = b && b.window
     ? { date: b.slot.iso!, ...counts(b.window.s, b.window.e, b.free, b.go, b.tentative) }
     : null;
-  return {
-    results: { eventId: event.id, respondedCount: responses.length, best, days, slots },
-    respondents: responses.map((r) => r.who),
-  };
+  return { eventId: event.id, respondedCount: responses.length, best, days, slots, people: event.participants.map((p) => ({ name: p.name, responded: p.responded })) };
 }

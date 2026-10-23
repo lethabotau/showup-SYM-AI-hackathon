@@ -130,7 +130,7 @@ describe('results view', () => {
     expect(v.resultsRows[0].freePct).toBe('100');
     expect(v.resultsRows[0].comingPct).toBe('50');
     expect(v.resultsRows[1].freePct).toBe('75');
-    expect(v.showRespondents).toBe(false);
+    expect(v.showPeople).toBe(false);
     expect(v.countLine).toBe('8 responses');
     c.componentWillUnmount();
   });
@@ -157,11 +157,15 @@ describe('results view', () => {
     c.componentWillUnmount();
   });
 
-  it('organiser sees who responded; nothing else about individuals', async () => {
-    reply = ok({ ...results(), respondents: ['Sam', 'Ella'] });
-    const c = mount({ screen: 'event', mode: 'organiser', myName: 'Alex' }, true);
+  it.each([['organiser', true], ['guest', false]])('%s sees silver circles for who responded and who has not; nothing else about individuals', async (mode, org) => {
+    reply = ok({ ...results(), people: [{ name: 'Sam', responded: true }, { name: 'ella', responded: false }] });
+    const c = mount({ screen: 'event', mode, myName: 'Alex', participantId: org ? undefined : 'P1' }, org);
     await vi.advanceTimersByTimeAsync(0);
-    expect(c.renderVals()).toMatchObject({ showRespondents: true, respondentsLine: 'Responded: Sam, Ella', showLiveResults: true });
+    const v = c.renderVals();
+    expect(v).toMatchObject({ showPeople: true, showLiveResults: true });
+    expect(v.resultsPeople.map((p: any) => [p.initial, p.tip, p.cls.includes('is-waiting')])).toEqual([['S', 'Sam', false], ['E', 'ella \u00b7 not replied yet', true]]);
+    expect(v.resultsPeople[0].cls).toContain('glass-silver');
+    expect(Object.keys(v.resultsPeople[0]).sort()).toEqual(['aria', 'cls', 'initial', 'key', 'name', 'tip']);
     c.componentWillUnmount();
   });
 

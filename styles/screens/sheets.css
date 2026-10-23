@@ -84,11 +84,17 @@
   .ev-grid{grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--space-5)}
   .ev-grid > *{grid-column:1 / 8}
   .ev-grid > .ev-title{grid-column:1 / 9}
+  .ev-grid.is-full .live-results{grid-row:2 / span 3}
   .ev-grid.is-full .ev-best{grid-row:2}
   .ev-grid.is-full .ev-dots{grid-row:3}
   .ev-grid.is-full .ev-people{grid-row:4}
   .ev-grid.is-full .ev-side{grid-column:9 / 13;grid-row:2 / span 3;align-self:start}
+  /* Stored events: the right column floats beside the left one. Zero height means opening the reminder (or any
+     growth here) never stretches the shared rows and shifts the links and invite card on the left. */
+  .ev-grid.is-full .ev-side.is-live{height:0;min-height:0;overflow:visible}
   .ev-grid.is-full .ev-links{grid-row:5}
+  .ev-grid.is-full .ev-invite-bottom{grid-row:5}
+  .ev-grid.is-full .ev-invite-bottom + .ev-links{grid-row:6}
   .ev-actions{order:-1}
 }
 @media (prefers-reduced-motion:reduce){

@@ -70,10 +70,22 @@ export default function LiveResults({ v }: { v: any }) {
           )))}
         </ul>
       ) : null}
-      {v.resultsRows.length || v.showRespondents ? (
+      {v.resultsRows.length ? (
         <div className="lr-foot">
-          {v.resultsRows.length ? <p className="small">Each dot is someone free. Red: coming. Pale red: maybe. Grey: free, not coming.</p> : null}
-          {v.showRespondents ? <p className="lr-note">{v.respondentsLine}</p> : null}
+          <p className="small">Each dot is someone free. Red: coming. Pale red: maybe. Grey: free, not coming.</p>
+        </div>
+      ) : null}
+      {v.showPeople ? (
+        <div className="lr-people">
+          <h2 className="comp-h">Responses</h2>
+          <div className="avatars">
+            {v.resultsPeople.map((p: any) => (
+              <span key={p.key} className={p.cls} role="img" aria-label={p.aria} tabIndex={0}>
+                <span aria-hidden="true">{p.initial}</span>
+                <span className="av-tip" aria-hidden="true">{p.tip}</span>
+              </span>
+            ))}
+          </div>
         </div>
       ) : null}
     </section>

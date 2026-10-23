@@ -12,7 +12,7 @@ describe('schema setup', () => {
   it('creates every table on an empty database and reports none missing', async () => {
     t = await testDb(false);
     const res = await setupSchema(t.db);
-    expect(res.created.sort()).toEqual(['conditions', 'day_willingness', 'event_days', 'events', 'participants', 'ranges', 'schema_migrations']);
+    expect(res.created.sort()).toEqual(['conditions', 'day_willingness', 'event_days', 'events', 'participants', 'proposal_votes', 'proposals', 'ranges', 'schema_migrations']);
     expect(res.version).toBe(1);
     expect(await schemaProblems(t.db, true)).toEqual([]);
   }, 15000);
